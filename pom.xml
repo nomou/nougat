@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>nougat</groupId>
+    <groupId>freework</groupId>
     <artifactId>nougat</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -47,15 +47,14 @@
 
 
     <distributionManagement>
-        <repository>
-            <!-- server id 保持一致 -->
-            <id>releases</id>
-            <url>${dist.mgt.releases.url}</url>
-        </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <url>${dist.mgt.snapshots.url}</url>
+            <id>${dist.mgt.snap-repo.id}</id>
+            <url>${dist.mgt.snap-repo.url}</url>
         </snapshotRepository>
+        <repository>
+            <id>${dist.mgt.repo.id}</id>
+            <url>${dist.mgt.repo.url}</url>
+        </repository>
     </distributionManagement>
 
     <repositories>
@@ -74,7 +73,7 @@
     <properties>
         <!--
          |
-        -->
+         -->
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <project.build.sourceVersion>1.7</project.build.sourceVersion>
@@ -83,15 +82,19 @@
         <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-
         <el.version>2.2.4</el.version>
         <cglib.version>3.1</cglib.version>
         <asm.version>3.3.1</asm.version>
         <javassist.version>3.12.0.GA</javassist.version>
         <slf4j.version>1.7.6</slf4j.version>
 
-        <dist.mgt.releases.url></dist.mgt.releases.url>
-        <dist.mgt.snapshots.url></dist.mgt.snapshots.url>
+        <!--
+         | distributionManagement.
+         -->
+        <dist.mgt.snap-repo.id>central</dist.mgt.snap-repo.id>
+        <dist.mgt.snap-repo.url>https://oss.sonatype.org/content/repositories/snapshots/</dist.mgt.snap-repo.url>
+        <dist.mgt.repo.id>central</dist.mgt.repo.id>
+        <dist.mgt.repo.url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</dist.mgt.repo.url>
     </properties>
 
     <dependencyManagement>
