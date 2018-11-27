@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>nougat</groupId>
+    <artifactId>nougat</artifactId>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Nougat</name>
+    <description>Nougat - a light java toolkit</description>
+    <url>https://gitee.com/freework-team/nougat/</url>
+
+    <modules>
+        <module>nougat-lang</module>
+        <!--
+        <module>lightly-web</module>
+        <module>lightly-misc</module>
+        <module>lightly-proc</module>
+        -->
+    </modules>
+
+
+    <organization>
+        <name>freework</name>
+        <url>https://gitee.com/freework-team/</url>
+    </organization>
+
+    <scm>
+        <url>https://gitee.com/freework-team/nougat</url>
+        <connection>scm:git:git@gitee.com:freework-team/nougat.git</connection>
+        <developerConnection>scm:git:git@gitee.com:freework-team/nougat.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <issueManagement>
+        <system>git@gitee Issue Management</system>
+        <url>https://gitee.com/freework-team/nougat/issues</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>Travis CI</system>
+        <url>https://travis-ci.org/nougat/</url>
+    </ciManagement>
+
+
+    <distributionManagement>
+        <repository>
+            <!-- server id 保持一致 -->
+            <id>releases</id>
+            <url>${dist.mgt.releases.url}</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <url>${dist.mgt.snapshots.url}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <repositories>
+        <repository>
+            <id>snapshots</id>
+            <name>Public Repositories</name>
+            <url>http://nexus.ponly.org/nexus/content/groups/public/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>interval:10</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <properties>
+        <!--
+         |
+        -->
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <project.build.sourceVersion>1.7</project.build.sourceVersion>
+        <project.build.targetVersion>1.7</project.build.targetVersion>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+
+        <el.version>2.2.4</el.version>
+        <cglib.version>3.1</cglib.version>
+        <asm.version>3.3.1</asm.version>
+        <javassist.version>3.12.0.GA</javassist.version>
+        <slf4j.version>1.7.6</slf4j.version>
+
+        <dist.mgt.releases.url></dist.mgt.releases.url>
+        <dist.mgt.snapshots.url></dist.mgt.snapshots.url>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.9</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.16.18</version>
+            </dependency>
+            <!-- logging BEGIN -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <!-- logging END -->
+            <!-- javax el api BEGIN -->
+            <dependency>
+                <groupId>javax.el</groupId>
+                <artifactId>javax.el-api</artifactId>
+                <version>${el.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.web</groupId>
+                <artifactId>el-impl</artifactId>
+                <version>2.2</version>
+                <optional>true</optional>
+            </dependency>
+            <!-- javax el api END -->
+            <dependency>
+                <groupId>javax.json</groupId>
+                <artifactId>javax.json-api</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish</groupId>
+                <artifactId>javax.json</artifactId>
+                <version>1.0.4</version>
+            </dependency>
+            <!-- proxy lib BEGIN -->
+            <dependency>
+                <groupId>cglib</groupId>
+                <artifactId>cglib</artifactId>
+                <version>${cglib.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${asm.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>${javassist.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <!-- proxy lib END -->
+        </dependencies>
+    </dependencyManagement>
+
+    <!--
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.8</version>
+                <configuration>
+                    <rulesets>
+                        <ruleset>rulesets/java/ali-comment.xml</ruleset>
+                        <ruleset>rulesets/java/ali-concurrent.xml</ruleset>
+                        <ruleset>rulesets/java/ali-constant.xml</ruleset>
+                        <ruleset>rulesets/java/ali-exception.xml</ruleset>
+                        <ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>
+                        <ruleset>rulesets/java/ali-naming.xml</ruleset>
+                        <ruleset>rulesets/java/ali-oop.xml</ruleset>
+                        <ruleset>rulesets/java/ali-orm.xml</ruleset>
+                        <ruleset>rulesets/java/ali-other.xml</ruleset>
+                        <ruleset>rulesets/java/ali-set.xml</ruleset>
+                    </rulesets>
+                    <printFailingErrors>true</printFailingErrors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.alibaba.p3c</groupId>
+                        <artifactId>p3c-pmd</artifactId>
+                        <version>1.3.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
+    -->
+</project>
