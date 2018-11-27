@@ -115,6 +115,12 @@
                 <version>${slf4j.version}</version>
                 <optional>true</optional>
             </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-log4j12</artifactId>
+                <version>1.7.6</version>
+                <optional>true</optional>
+            </dependency>
             <!-- logging END -->
             <!-- javax el api BEGIN -->
             <dependency>

@@ -10,6 +10,7 @@ import java.lang.reflect.WildcardType;
  * Switch-style type judgment.
  *
  * @param <T>
+ * @since v1.0
  */
 public class TypeSwitch<T> {
 

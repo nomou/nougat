@@ -98,13 +98,13 @@ public abstract class Castor {
     }
 
     /**
-     * 将一个对象转换为 Boolean
-     * {@link #asString(Object)} 为
-     * true|y|yes|on|1 的对象都将返回 true
-     * false|n|no|off|0 的对象都返回 false
+     * Convert given object to Boolean.
+     * <p>
+     * return true if obj.toString is true|y|yes|on|1
+     * return false if obj.toString is false|n|no|off|0
      *
-     * @param obj
-     * @return
+     * @param obj the object
+     * @return the boolean
      */
     public static Boolean asBoolean(final Object obj) {
         if (obj instanceof Boolean) {
