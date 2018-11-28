@@ -21,7 +21,7 @@ import java.util.zip.ZipOutputStream;
  * @author vacoor
  * @since 1.0
  */
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule"})
 public abstract class Zip {
 
     /**

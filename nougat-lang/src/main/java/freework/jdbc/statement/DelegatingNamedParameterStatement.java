@@ -4,25 +4,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Connection;
+import java.sql.*;
 import java.sql.Date;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.Ref;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -67,7 +51,7 @@ public class DelegatingNamedParameterStatement extends DelegatingPreparedStateme
 
     public static DelegatingNamedParameterStatement newStatement(final Connection conn, final String sql) throws SQLException {
         final Matcher matcher = NAMED_PATTERN.matcher(sql);
-        final Map<String/*name*/, Set<Integer>/*index*/> nameIndexMap = new HashMap<>();
+        final Map<String/*name*/, Set<Integer>/*index*/> nameIndexMap = new HashMap<>(20);
         for (int i = 1; matcher.find(); i++) {
             final String name = matcher.group(1);
 

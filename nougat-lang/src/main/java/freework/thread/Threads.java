@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author vacoor
  */
-@SuppressWarnings({"unused"})
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Threads {
 
     /**

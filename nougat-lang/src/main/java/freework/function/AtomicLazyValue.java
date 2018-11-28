@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicMarkableReference;
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AtomicLazyValue<V> implements LazyValue<V> {
     private final AtomicMarkableReference<V> ref = new AtomicMarkableReference<V>(null, false);
 

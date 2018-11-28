@@ -1,10 +1,6 @@
 package freework.codec;
 
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.Arrays;
 
 /**
@@ -89,6 +85,7 @@ import java.util.Arrays;
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public abstract class Base64 {
     /**
      * Defaults flag using RFC4648 encoding/decoding.

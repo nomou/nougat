@@ -18,7 +18,7 @@ import java.util.Set;
  * @author vacoor
  * @since 1.0
  */
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule"})
 public abstract class Throwables {
 
     /**
@@ -47,35 +47,35 @@ public abstract class Throwables {
      * @return never return
      */
     public static <R> R unchecked(final String message, final Throwable cause) throws IllegalStateException {
-        return rethrow(cause, message, IllegalStateException.class);
+        return rethrow(IllegalStateException.class, message, cause);
     }
 
     /**
      * Re-throws the specified throwable as wrap type throwable.
      *
-     * @param cause    the cause throwable
-     * @param wrapType the wrap type class of cause
      * @param <R>      the type of return
      * @param <E>      the wrap type
+     * @param wrapType the wrap type class of cause
+     * @param cause    the cause throwable
      * @return never return
      * @throws E the wrap throwable
      */
-    public static <R, E extends Throwable> R rethrow(final Throwable cause, final Class<E> wrapType) throws E {
-        return rethrow(cause, cause.getMessage(), wrapType);
+    public static <R, E extends Throwable> R rethrow(final Class<E> wrapType, final Throwable cause) throws E {
+        return rethrow(wrapType, cause.getMessage(), cause);
     }
 
     /**
      * Re-throws the specified throwable as wrap type throwable.
      *
-     * @param cause    the cause throwable
+     * @param <R>      the type of return
+     * @param <E>      the wrap type
+     * @param wrapType the wrap type class of cause
      * @param message  the message of wrap throwable
-     * @param wrapType the wrap type class of cause
-     * @param <R>      the type of return
-     * @param <E>      the wrap type
+     * @param cause    the cause throwable
      * @return never return
      * @throws E the wrap throwable
      */
-    public static <R, E extends Throwable> R rethrow(final Throwable cause, final String message, final Class<E> wrapType) throws E {
+    public static <R, E extends Throwable> R rethrow(final Class<E> wrapType, final String message, final Throwable cause) throws E {
         if (cause instanceof Error) {
             throw (Error) cause;
         }

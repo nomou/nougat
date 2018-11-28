@@ -15,28 +15,15 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
+import java.sql.*;
 import java.sql.Date;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
+ * TODO complete me.
  */
-public abstract class Jdbc {
+@SuppressWarnings("PMD")
+abstract class Jdbc {
     private static final Logger LOGGER = LoggerFactory.getLogger(Jdbc.class);
 
     public static final String DERBY = "derby";

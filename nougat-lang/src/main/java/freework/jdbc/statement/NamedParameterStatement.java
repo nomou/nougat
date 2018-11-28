@@ -3,24 +3,19 @@ package freework.jdbc.statement;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.Ref;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLTimeoutException;
-import java.sql.SQLXML;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Calendar;
 
 /**
+ * @author vacoor
  */
 public interface NamedParameterStatement extends PreparedStatement {
 
+    /**
+     * Returns number of the named parameters.
+     *
+     * @return number of the named parameters
+     */
     int getNamedParameterCount();
 
     /**

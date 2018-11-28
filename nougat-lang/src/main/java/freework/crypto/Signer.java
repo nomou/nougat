@@ -2,14 +2,7 @@ package freework.crypto;
 
 import freework.crypto.cipher.Crypt;
 
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.Certificate;
 
 /**
@@ -20,6 +13,7 @@ import java.security.cert.Certificate;
  * @see Crypt#newSymmetricKey(String)
  * @since 1.0
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class Signer {
     /**
      * MD5withRSA algorithm.

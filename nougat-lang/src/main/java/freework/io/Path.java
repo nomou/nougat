@@ -9,8 +9,10 @@ import java.util.regex.Pattern;
  * Path strings use slash as the directory separator.
  * A path string is absolute if it begins with a slash.
  *
+ * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class Path implements Comparable, Cloneable {
     /**
      * The platform whether is windows.
@@ -95,6 +97,7 @@ public class Path implements Comparable, Cloneable {
      *
      * @return the normalized path
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public String getPath() {
         String path = this.path;
         final StringBuilder buffer = new StringBuilder();
@@ -115,6 +118,7 @@ public class Path implements Comparable, Cloneable {
      *
      * @return null if this path is root, otherwise the parent path
      */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
     public Path getParent() {
         final int lastSlash = path.lastIndexOf(SEPARATOR_CHAR);
         final int start = hasWindowsDrive(path) ? 3 : 0;

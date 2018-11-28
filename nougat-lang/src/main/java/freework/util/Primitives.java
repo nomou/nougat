@@ -14,6 +14,7 @@ import java.util.Map;
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Primitives {
     private static final Map<String, Class<?>> PRIMITIVE_TO_WRAPPER_TYPE = new HashMap<String, Class<?>>(9);
     private static final Map<Class<?>, Class<?>> WRAPPER_TO_PRIMITIVE_TYPE = new HashMap<Class<?>, Class<?>>(9);

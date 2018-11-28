@@ -11,11 +11,12 @@ import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
- * String utility.
+ * Utilities of String.
  *
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class StringUtils2 {
     private static final String NONE = "";
     private static final char SPACE = ' ';
@@ -320,6 +321,7 @@ public abstract class StringUtils2 {
      * @param firstCharUpperCase true if first char should uppercase
      * @return the CamelCase-style string
      */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
     public static String delimitedToCamelCase(final String text, final char delimiter, final boolean firstCharUpperCase) {
         if (!hasLength(text)) {
             return text;
@@ -359,7 +361,6 @@ public abstract class StringUtils2 {
 
         for (int i = 1; i < chars.length; i++) {
             char c = chars[i];
-            // 大写字母后不是大写字母且不是下划线则追加
             if (Character.isUpperCase(c) && i + 1 < chars.length && !Character.isUpperCase(chars[i + 1]) && delimiter != chars[i + 1]) {
                 segment.append(delimiter);
             }

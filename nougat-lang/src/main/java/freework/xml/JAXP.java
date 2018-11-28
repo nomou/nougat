@@ -11,18 +11,11 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+import javax.xml.parsers.*;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -30,87 +23,58 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 
 /**
+ * TODO complete me.
  * 对 JAXP 简单封装
  *
  * @author vacoor
  * @see javax.xml.parsers
  */
-public abstract class JAXP {
-    private static final String SCHEMA_FEATURE = "http://apache.org/xml/features/validation/schema";
+@SuppressWarnings("PMD")
+abstract class JAXP {
     private static final Charset UTF_8 = Charset.forName("UTF-8");
 
 
-    public static void parse(String xml, DefaultHandler handler) {
+    public static void parse(final String xml, final DefaultHandler handler) {
         parse(new StringReader(xml), handler);
     }
 
-    public static void parse(File file, DefaultHandler handler) {
-        try {
-            parse(new FileInputStream(file), handler);
-        } catch (FileNotFoundException e) {
-            Throwables.unchecked(e);
-        }
+    public static void parse(final InputStream in, final Charset charset, final DefaultHandler handler) {
+        parse(new InputStreamReader(in, null != charset ? charset : UTF_8), handler);
     }
 
-    public static void parse(InputStream is, DefaultHandler handler) {
-        parse(is, null, handler);
-    }
-
-    public static void parse(InputStream is, Charset charset, DefaultHandler handler) {
-        charset = null != charset ? charset : UTF_8;
-        parse(new InputStreamReader(is, charset), handler);
-    }
-
-    public static void parse(Reader reader, DefaultHandler handler) {
+    public static void parse(final Reader reader, final DefaultHandler handler) {
         parse(new InputSource(reader), handler);
     }
 
-    public static void parse(InputSource inputSource, DefaultHandler handler) {
+    public static void parse(final InputSource source, final DefaultHandler handler) {
         try {
-            SAXParser parser = createSAXParser();
-            parser.parse(inputSource, handler);
-        } catch (Exception ex) {
+            final SAXParser parser = newParser();
+            parser.parse(source, handler);
+        } catch (final Exception ex) {
             Throwables.unchecked(ex);
         }
     }
 
-
-    public static Document parse(String xml) {
-        return parse(new StringReader(xml));
+    public static Document read(final String xml) {
+        return read(new StringReader(xml));
     }
 
-    public static Document parse(File file) {
-        Document doc;
-        try {
-            doc = parse(new FileInputStream(file));
-        } catch (FileNotFoundException e) {
-            doc = Throwables.unchecked(e);
-        }
-        return doc;
-    }
-
-    public static Document parse(InputStream is) {
-        return parse(is, (Charset) null);
-    }
-
-    public static Document parse(InputStream is, Charset charset) {
+    public static Document read(final InputStream in, Charset charset) {
         charset = null != charset ? charset : UTF_8;
-        return parse(new InputStreamReader(is, charset));
+        return read(new InputStreamReader(in, charset));
     }
 
-    public static Document parse(Reader reader) {
-        return parse(new InputSource(reader));
+    public static Document read(final Reader reader) {
+        return read(new InputSource(reader));
     }
 
-    public static Document parse(InputSource inputSource) {
-        Document doc;
+    public static Document read(final InputSource source) {
         try {
             DocumentBuilder builder = newBuilder();
-            doc = builder.parse(inputSource);
-        } catch (Exception ex) {
-            doc = Throwables.unchecked(ex);
+            return builder.parse(source);
+        } catch (final Exception ex) {
+            return Throwables.unchecked(ex);
         }
-        return doc;
     }
 
     /* ************************************
@@ -123,25 +87,19 @@ public abstract class JAXP {
      *
      * @return
      */
-    public static SAXParser createSAXParser() {
-        return createSAXParser(null);
+    public static SAXParser newParser() {
+        return newParser(null);
     }
 
-    //
-    public static SAXParser createSAXParser(Schema schema) {
+    public static SAXParser newParser(final Schema schema) {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setXIncludeAware(true);
             factory.setNamespaceAware(true);
-            /**
-             * @deprecated
-             * factory.setValidating(true);
-             * factory.setFeature(SCHEMA_FEATURE, true);
-             */
             factory.setSchema(schema);
             return factory.newSAXParser();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create SAX Parser !", e);
+        } catch (final Exception e) {
+            return Throwables.unchecked("Failed to create SAX Parser!", e);
         }
     }
 
@@ -264,39 +222,26 @@ public abstract class JAXP {
      *            DTD / Schema
      * ***************************************/
 
-    public static Schema createSchema(File file, boolean dtd) {
-        Schema schema;
-        try {
-            schema = createSchema(new FileInputStream(file), dtd);
-        } catch (FileNotFoundException e) {
-            schema = Throwables.unchecked(e);
-        }
-        return schema;
+    public static Schema newSchema(final InputStream schema, final Charset charset, boolean dtd) {
+        return newSchema(new InputStreamReader(schema, null != charset ? charset : UTF_8), dtd);
     }
 
-    public static Schema createSchema(InputStream is, boolean dtd) {
-        return createSchema(is, (Charset) null, dtd);
+    public static Schema newSchema(final Reader reader, final boolean dtd) {
+        return newSchema(new StreamSource(reader), dtd);
     }
 
-    public static Schema createSchema(InputStream schema, Charset charset, boolean dtd) {
-        charset = null != charset ? charset : UTF_8;
-        return createSchema(new InputStreamReader(schema, charset), dtd);
-    }
-
-    public static Schema createSchema(Reader reader, boolean dtd) {
-        return createSchema(new StreamSource(reader), dtd);
-    }
-
-    public static Schema createSchema(Source schema, boolean dtd) {
-        String schemaLang = dtd ? XMLConstants.XML_DTD_NS_URI : XMLConstants.W3C_XML_SCHEMA_NS_URI;
+    public static Schema newSchema(final Source schema, final boolean dtd) {
+        final String schemaLang = dtd ? XMLConstants.XML_DTD_NS_URI : XMLConstants.W3C_XML_SCHEMA_NS_URI;
         try {
             return SchemaFactory.newInstance(schemaLang).newSchema(schema);
-        } catch (SAXException e) {
-            throw new RuntimeException("Failed to create schema, type is " + (dtd ? "DTD" : "SCHEMA"));
+        } catch (final SAXException e) {
+            return Throwables.unchecked("Failed to create schema, type is " + (dtd ? "DTD" : "SCHEMA"), e);
         }
     }
 
-    // ---- 错误捕获处理器
+    /**
+     * The error capture handler for SAX.
+     */
     private static class ErrorCaptureHandler extends DefaultHandler {
         private static final Logger LOG = LoggerFactory.getLogger(ErrorCaptureHandler.class);
 

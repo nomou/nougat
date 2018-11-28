@@ -8,28 +8,12 @@ import javax.imageio.ImageIO;
 import javax.json.Json;
 import javax.json.JsonException;
 import javax.json.JsonStructure;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import javax.xml.parsers.DocumentBuilder;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.reflect.Field;
-import java.net.HttpCookie;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.SecureRandom;
@@ -37,22 +21,10 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 
 /**
- * Http utils.
+ * Utilities of Http.
  * <p>
  * By default, 'Orign', 'Host' request header is not allowed to be set,
  * if you need to set up you can use the following code:
@@ -63,6 +35,7 @@ import java.util.TimeZone;
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Http {
     /**
      * The 'UTF-8' charset.
@@ -255,6 +228,7 @@ public abstract class Http {
      * @param path     the child path
      * @return the http url
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static String buildUrl(final String endpoint, final String path) {
         if (null == endpoint) {
             return path;
@@ -309,6 +283,7 @@ public abstract class Http {
      * @param params  the name-value pairs
      * @return the query string
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static String buildQuery(final String charset, final String... params) {
         if (0 != params.length % 2) {
             throw new IllegalArgumentException("params must appear in pairs: key1,value2,key2,value2,...");
@@ -366,7 +341,7 @@ public abstract class Http {
      * @return the name-value pairs
      */
     public static Map<String, String> splitQuery(final String query, final String charset) {
-        final Map<String, String> result = new HashMap<String, String>();
+        final Map<String, String> result = new HashMap<String, String>(15);
         final String[] pairs = query.split("&");
         if (pairs.length > 0) {
             for (final String pair : pairs) {
@@ -583,6 +558,7 @@ public abstract class Http {
      * @return the applicable cookies.
      * @see java.net.CookieManager#put(java.net.URI, Map)
      */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
     public static List<HttpCookie> getResponseCookies(final HttpURLConnection httpUrlConnection) {
         final URL url = httpUrlConnection.getURL();
         final Map<String, List<String>> headers = httpUrlConnection.getHeaderFields();
@@ -649,6 +625,7 @@ public abstract class Http {
      * @return the (possibly empty) list of invalid cookies.
      * @see java.net.CookieHandler#put(java.net.URI, Map)
      */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
     public static Set<HttpCookie> addRequestCookies(final HttpURLConnection httpUrlConnection, final Set<HttpCookie> candidates) {
         final URL url = httpUrlConnection.getURL();
         final String requestHost = url.getHost();
@@ -674,7 +651,6 @@ public abstract class Http {
             }
 
             // TODO check port
-            // String portlist = cookie.getPortlist();
             cookies.add(cookie);
         }
 
@@ -817,8 +793,6 @@ public abstract class Http {
         }
 
         httpUrlConnection.setRequestMethod(method);
-
-        // TODO httpUrlConnection.setInstanceFollowRedirects(false);
         httpUrlConnection.setRequestProperty("Host", serverUrl.getHost());
         httpUrlConnection.setRequestProperty("User-Agent", DEFAULT_USER_AGENT);
         httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");

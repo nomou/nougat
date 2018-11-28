@@ -9,12 +9,7 @@ import freework.util.StringUtils2;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.DataBindingException;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.namespace.QName;
@@ -22,14 +17,7 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.net.URLConnection;
@@ -37,6 +25,8 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
+ * TODO complete me.
+ *
  * JAXB 2 工具类
  * 简单封装 XML &lt;--&gt; JAXB Object
  * 支持没有使用注解的 Java Bean, JavaBean[] --&gt; XML
@@ -46,7 +36,8 @@ import java.util.WeakHashMap;
  * @author vacoor
  * @see javax.xml.bind
  */
-public abstract class JAXB2 {
+@SuppressWarnings("PMD")
+abstract class JAXB2 {
     private static final String DEFAULT_ENCODING = "UTF-8";
 
     private static volatile Map<Class, WeakReference<JAXBContext>> contextCache = new WeakHashMap<Class, WeakReference<JAXBContext>>();

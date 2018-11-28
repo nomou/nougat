@@ -11,14 +11,14 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 
 /**
- * Reflect types utils.
+ * Utilities of Type.
  * <p>
  * NOTE:Generic type definition will erase at compiling in java, but the class and class member is not erase.
  *
  * @author vacoor
  * @since 1.0
  */
-@SuppressWarnings("unused")
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Types {
     /**
      * Non-Types array.

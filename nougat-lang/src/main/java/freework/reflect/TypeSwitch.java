@@ -1,17 +1,15 @@
 package freework.reflect;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 
 /**
  * Switch-style type judgment.
  *
  * @param <T>
- * @since v1.0
+ * @author vacoor
+ * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public class TypeSwitch<T> {
 
     /**

@@ -12,11 +12,15 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 /**
- * I/O stream utils.
+ * Utilities of I/O stream.
  *
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings({
+        "PMD.ClassNamingShouldBeCamelRule",
+        "PMD.AbstractClassShouldStartWithAbstractNamingRule"
+})
 public abstract class IOUtils {
     public static final int END_OF_INPUT = -1;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;

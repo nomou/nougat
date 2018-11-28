@@ -11,7 +11,7 @@ package freework.codec;
  * @author vacoor
  * @since 1.0
  */
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule"})
 public abstract class Hex {
     /**
      * Hexadecimal char array.

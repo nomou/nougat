@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
  * @author vacoor
  * @since v1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Proxy2 {
     private static final ProxyFactory DEFAULT = new DefaultProxyFactory();
 

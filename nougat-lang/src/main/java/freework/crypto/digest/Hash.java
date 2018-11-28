@@ -30,12 +30,13 @@ import java.security.NoSuchAlgorithmException;
  * @author vacoor
  * @since 1.0
  */
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule"})
 public class Hash {
 
     /**
      * Hash algorithm.
      */
+    @SuppressWarnings("PMD.EnumConstantsMustHaveCommentRule")
     public enum Algorithm {
         MD2("MD2"), MD5("MD5"), SHA1("SHA-1"), SHA256("SHA-256"), SHA384("SHA-384"), SHA512("SHA-512");
 

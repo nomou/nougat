@@ -27,6 +27,7 @@ import java.lang.reflect.TypeVariable;
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class TypeReference<T> {
     protected final Type type;
 

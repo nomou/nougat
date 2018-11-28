@@ -17,11 +17,15 @@ import java.util.Locale;
 
 /**
  * Castor.
+ * TODO javadocs.
  *
  * @author vacoor
  * @since 1.0
  */
-
+@SuppressWarnings({
+        "PMD",
+        "PMD.AbstractClassShouldStartWithAbstractNamingRule"
+})
 public abstract class Castor {
     private static final String DATE_FORMAT_PLAIN = "yyyy-MM-dd HH:mm:ss.SSS";
     private static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
@@ -92,7 +96,7 @@ public abstract class Castor {
         if (obj instanceof Number) {
             final NumberFormat fmt = NumberFormat.getInstance();
             fmt.setGroupingUsed(false);
-            return fmt.format((Number) obj);
+            return fmt.format(obj);
         }
         return obj.toString();
     }

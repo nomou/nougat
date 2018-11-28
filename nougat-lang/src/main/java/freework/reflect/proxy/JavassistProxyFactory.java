@@ -7,8 +7,6 @@ package freework.reflect.proxy;
 
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -132,6 +130,7 @@ public final class JavassistProxyFactory implements ProxyFactory {
         }
 
         @Override
+        @SuppressWarnings("PMD.RemoveCommentedCodeRule")
         public Object invoke(final Object proxy, final Method method, final Method methodProxy, final Object[] args) throws Throwable {
             if (!Modifier.isAbstract(method.getModifiers()) && !override) {
                 /*-
