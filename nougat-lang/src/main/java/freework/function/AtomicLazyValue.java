@@ -3,7 +3,7 @@ package freework.function;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 /**
- * A lazy value that may be updated atomically.
+ * A lazy compute value that may be updated atomically.
  *
  * @author vacoor
  * @since 1.0

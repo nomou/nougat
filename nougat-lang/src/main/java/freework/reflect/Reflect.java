@@ -605,6 +605,17 @@ public class Reflect {
         return declaredTypes;
     }
 
+    /**
+     * Compares matching degree of the constructor/method parameter types.
+     *
+     * @param memberA       the member a (nullable)
+     * @param typesA        the parameter types of member a
+     * @param memberB       the member b (not null)
+     * @param typesB        the parameter types of member b
+     * @param argumentTypes the arguments types for matching
+     * @param <T>           the member type
+     * @return 1 if best match is member b, -1 if best match is member a, otherwise 0
+     */
     private static <T extends Member> int matchesCompare(final T memberA, final Class<?>[] typesA,
                                                          final T memberB, final Class<?>[] typesB,
                                                          final Class<?>[] argumentTypes) {
@@ -645,6 +656,12 @@ public class Reflect {
         return -1;
     }
 
+    /**
+     * Returns whether the given member contains var-args.
+     *
+     * @param member the member
+     * @return true if contains var-args
+     */
     private static boolean isVarArgs(final Member member) {
         if (member instanceof Constructor<?>) {
             return ((Constructor<?>) member).isVarArgs();
@@ -657,7 +674,7 @@ public class Reflect {
 
 
     /**
-     * Whether the declared types is compatible with the value of the given types.
+     * Returns whether the declared types is compatible with the value of the given types.
      *
      * @param declaredTypes the declared types
      * @param actualTypes   the actual types
@@ -677,7 +694,7 @@ public class Reflect {
     }
 
     /**
-     * Whether the declared type is compatible with the value of the given type.
+     * Returns whether the declared type is compatible with the value of the given type.
      *
      * @param declaredType the declared type
      * @param actualType   the actual type
@@ -861,7 +878,7 @@ public class Reflect {
     }
 
     /**
-     * TODO DOCME.
+     * TODO javadocs.
      *
      * @return complete me!
      */
@@ -870,7 +887,7 @@ public class Reflect {
     }
 
     /**
-     * TODO DOCME.
+     * TODO javadocs.
      *
      * @param skipSystemClass if true skip system class
      * @return complete me
@@ -891,7 +908,7 @@ public class Reflect {
     }
 
     /**
-     * 获取调用栈信息.
+     * TODO javadocs.
      *
      * @param framesToSkip 跳过的frame层数, 当framesToSkip=0则获取调用该方法的调用者堆栈
      * @return 堆栈信息

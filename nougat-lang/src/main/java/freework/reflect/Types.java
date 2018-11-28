@@ -20,6 +20,9 @@ import java.lang.reflect.TypeVariable;
  */
 @SuppressWarnings("unused")
 public abstract class Types {
+    /**
+     * Non-Types array.
+     */
     private static final Type[] NONE_TYPES = new Type[0];
 
     /**
@@ -226,6 +229,9 @@ public abstract class Types {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * TODO javadocs.
+     */
     private static <S> Type lookupSuper(final Class<? extends S> context, final Class<S> definition) {
         /* context is an interface or interface implementation, the superclass must be an interface. */
         final Type superType = context.getGenericSuperclass();
@@ -246,6 +252,12 @@ public abstract class Types {
         return target;
     }
 
+    /**
+     * Returns whether the given class is a class or interface(not annotation/array/enum/primitive).
+     *
+     * @param clazz the class
+     * @return true if class is not annotation/array/enum/primitive, otherwise false
+     */
     private static boolean isInterfaceOrClass(final Class<?> clazz) {
         return !(clazz.isAnnotation() || clazz.isArray() || clazz.isEnum() || clazz.isPrimitive());
     }

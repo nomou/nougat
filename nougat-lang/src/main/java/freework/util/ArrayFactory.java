@@ -1,17 +1,18 @@
 package freework.util;
 
 /**
- * 数组工厂接口.
+ * Array factory.
  *
  * @author vacoor
+ * @since 1.0
  */
 public interface ArrayFactory<E> {
 
     /**
-     * 创建一个给定长度的数组.
+     * Creates an array of the given length.
      *
-     * @param len 数组长度
-     * @return 数组
+     * @param len the length
+     * @return the new array
      */
     E[] create(final int len);
 

@@ -14,6 +14,9 @@ import java.lang.reflect.WildcardType;
  */
 public class TypeSwitch<T> {
 
+    /**
+     * TODO javadocs.
+     */
     public final T doSwitch(final Type type) {
         if (type instanceof Class<?>) {
             return caseClass((Class<?>) type);
@@ -33,28 +36,45 @@ public class TypeSwitch<T> {
         return defaultCase(type);
     }
 
+    /**
+     * TODO javadocs.
+     */
     protected T caseWildcardType(final WildcardType wildcardType) {
         return defaultCase(wildcardType);
     }
 
+    /**
+     * TODO javadocs.
+     */
     protected T caseTypeVariable(final TypeVariable typeVariable) {
         return defaultCase(typeVariable);
     }
 
+    /**
+     * TODO javadocs.
+     */
     protected T caseClass(final Class classType) {
         return defaultCase(classType);
     }
 
+    /**
+     * TODO javadocs.
+     */
     protected T caseGenericArrayType(final GenericArrayType genericArrayType) {
         return defaultCase(genericArrayType);
     }
 
+    /**
+     * TODO javadocs.
+     */
     protected T caseParameterizedType(final ParameterizedType parameterizedType) {
         return defaultCase(parameterizedType);
     }
 
+    /**
+     * TODO javadocs.
+     */
     protected T defaultCase(final Type type) {
         return null;
     }
-
 }

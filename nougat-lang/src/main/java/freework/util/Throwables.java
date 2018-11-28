@@ -28,60 +28,99 @@ public abstract class Throwables {
     }
 
     /**
-     * 检查异常是否由给定异常引发
+     * Re-throws the specified throwable as unchecked exception (IllegalStateException).
+     *
+     * @param cause the throwable
+     * @param <R>   the type of return
+     * @return never return
      */
-    public static boolean causedBy(final Throwable t, final Class<? extends Throwable> causeType) {
-        final Set<Throwable> causes = new HashSet<Throwable>();
-
-        Throwable cause = t;
-        for (; null != cause && !causeType.isInstance(cause) && !causes.contains(cause); cause = cause.getCause()) {
-            causes.add(cause);
-        }
-
-        return null != cause && causeType.isInstance(cause);
+    public static <R> R unchecked(final Throwable cause) throws IllegalStateException {
+        return unchecked(cause.getMessage(), cause);
     }
 
-    public static Throwable getCause(final Throwable t) {
-        final Set<Throwable> causes = new HashSet<Throwable>();
-
-        Throwable cause = t;
-        while (null != cause.getCause() && !causes.contains(cause)) {
-            cause = cause.getCause();
-        }
-        return cause;
-    }
-
-    public static <R> R unchecked(final Throwable cause) {
-        return unchecked(null, cause);
-    }
-
-    public static <R> R unchecked(final String message, final Throwable cause) {
+    /**
+     * Re-throws the specified throwable as unchecked exception (IllegalStateException).
+     *
+     * @param message the message of unchecked exception
+     * @param cause   the throwable
+     * @param <R>     the type of return
+     * @return never return
+     */
+    public static <R> R unchecked(final String message, final Throwable cause) throws IllegalStateException {
         return rethrow(cause, message, IllegalStateException.class);
     }
 
+    /**
+     * Re-throws the specified throwable as wrap type throwable.
+     *
+     * @param cause    the cause throwable
+     * @param wrapType the wrap type class of cause
+     * @param <R>      the type of return
+     * @param <E>      the wrap type
+     * @return never return
+     * @throws E the wrap throwable
+     */
     public static <R, E extends Throwable> R rethrow(final Throwable cause, final Class<E> wrapType) throws E {
         return rethrow(cause, cause.getMessage(), wrapType);
     }
 
+    /**
+     * Re-throws the specified throwable as wrap type throwable.
+     *
+     * @param cause    the cause throwable
+     * @param message  the message of wrap throwable
+     * @param wrapType the wrap type class of cause
+     * @param <R>      the type of return
+     * @param <E>      the wrap type
+     * @return never return
+     * @throws E the wrap throwable
+     */
     public static <R, E extends Throwable> R rethrow(final Throwable cause, final String message, final Class<E> wrapType) throws E {
         if (cause instanceof Error) {
             throw (Error) cause;
         }
-
-        final String finalMessage = null != message ? message : cause.getMessage();
         throw Reflect.wrap(wrapType).instantiate(message, cause).<E>get();
     }
 
     /**
-     * 获取异常的堆栈追踪字符串
+     * Returns whether the throwable 't' is caused by a given cause type.
      *
-     * @param t 异常
-     * @return 异常堆栈信息
+     * @param t         the throwable
+     * @param causeType the cause type
+     * @return true if caused by cause type, otherwise false
      */
-    public static String getStackTraceAsString(Throwable t) {
+    public static boolean causedBy(final Throwable t, final Class<? extends Throwable> causeType) {
+        final Set<Throwable> causes = new HashSet<Throwable>();
+        Throwable cause = t;
+        for (; null != cause && !causeType.isInstance(cause) && !causes.contains(cause); cause = cause.getCause()) {
+            causes.add(cause);
+        }
+        return causeType.isInstance(cause);
+    }
+
+    /**
+     * Returns the innermost cause of the throwable.
+     *
+     * @param throwable the throwable
+     * @return the innermost cause
+     */
+    public static Throwable getRootCause(Throwable throwable) {
+        Throwable cause;
+        while ((cause = throwable.getCause()) != null) {
+            throwable = cause;
+        }
+        return throwable;
+    }
+
+    /**
+     * Returns a string containing the result of Throwable#toString(), followed by the full, recursive stack trace of  throwable.
+     *
+     * @param t the throwable
+     * @return the stack trace string
+     */
+    public static String getStackTraceAsString(final Throwable t) {
         final StringWriter writer = new StringWriter();
         t.printStackTrace(new PrintWriter(writer));
-
         return writer.toString();
     }
 }

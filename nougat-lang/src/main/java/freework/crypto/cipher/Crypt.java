@@ -174,7 +174,7 @@ public abstract class Crypt {
             }
         } catch (final NoSuchPaddingException e) {
             throw new IllegalStateException(e);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         } catch (final InvalidAlgorithmParameterException e) {
             throw new IllegalStateException(e);

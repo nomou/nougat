@@ -9,9 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 基本数据类型 - 包装器类型转换工具
+ * Utils for primitive types and their corresponding wrapper types.
  *
  * @author vacoor
+ * @since 1.0
  */
 public abstract class Primitives {
     private static final Map<String, Class<?>> PRIMITIVE_TO_WRAPPER_TYPE = new HashMap<String, Class<?>>(9);
@@ -40,270 +41,98 @@ public abstract class Primitives {
     }
 
     /**
-     * 给定类型是否是基本数据类型的包装器类型
-     *
-     * @param type
-     * @return
+     * Non-instantiate.
      */
-    public static boolean isWrapperType(Class<?> type) {
+    private Primitives() {
+    }
+
+    /**
+     * Returns {@code true} if {@code type} is one of the nine primitive-wrapper types.
+     *
+     * @param type the type
+     * @return true if one of the nine primitive-wrapper types
+     */
+    public static boolean isWrapperType(final Class<?> type) {
         return WRAPPER_TO_PRIMITIVE_TYPE.containsKey(type);
     }
 
     /**
-     * 获取给定基本数据类型名称对应的包装器类型
+     * Returns the corresponding wrapper type of 'type', if it is a primitive type name; otherwise returns null.
+     * <p>Idempotent.
+     * <pre>
+     *     wrap("int") == Integer.class
+     *     wrap("String") == null
+     * </pre>
      *
-     * @param primitive
-     * @return
+     * @param type the name of primitive type
+     * @return the corresponding wrapper type if 'type' is a primitive type name, otherwise null
      */
-    public static Class<?> wrap(String primitive) {
-        return PRIMITIVE_TO_WRAPPER_TYPE.get(primitive);
+    public static Class<?> wrap(final String type) {
+        return PRIMITIVE_TO_WRAPPER_TYPE.get(type);
     }
 
     /**
-     * 获取给定基本数据类型对应的包装器类型
-     * <p>
-     * 如果给定类型不是基本数据类型则返回给定参数
+     * Returns the corresponding wrapper type of 'type', if it is a primitive type; otherwise returns 'type' itself.
+     * <p>Idempotent.
+     * <pre>
+     *     wrap(int.class) == Integer.class
+     *     wrap(Integer.class) == Integer.class
+     *     wrap(String.class) == String.class
+     * </pre>
+     *
+     * @param type the primitive type
+     * @return the corresponding wrapper type if 'type' is a primitive type, otherwise 'type'
      */
-    public static Class<?> wrap(Class<?> primitive) {
-        Class<?> wrapped = wrap(primitive.getName());
-        return wrapped != null ? wrapped : primitive;
+    public static Class<?> wrap(final Class<?> type) {
+        final Class<?> wrapped = wrap(type.getName());
+        return wrapped != null ? wrapped : type;
     }
 
     /**
-     * 返回给定数组中基本数据类型被包装器类型替换后的数组
+     * Returns the corresponding wrapper types of {@code types}.
      *
-     * @param primitives
-     * @return
+     * @param types the types
+     * @return the wrapper types
+     * @see #wrap(Class)
      */
-    public static Class<?>[] wrap(Class<?>[] primitives) {
-        Class<?>[] wrapped = new Class<?>[primitives.length];
-
-        for (int i = 0; i < primitives.length; i++) {
-            wrapped[i] = wrap(primitives[i]);
+    public static Class<?>[] wrap(final Class<?>[] types) {
+        final Class<?>[] wrapped = new Class<?>[types.length];
+        for (int i = 0; i < types.length; i++) {
+            wrapped[i] = wrap(types[i]);
         }
         return wrapped;
     }
 
     /**
-     * 返回给定包装器类型对应的基本数据类型
+     * Returns the corresponding primitive type of {@code type} if it is a wrapper type; otherwise returns {@code type} itself.
      *
-     * @param wrapper
-     * @return
+     * <p>Idempotent.
+     * <pre>
+     *     unwrap(Integer.class) == int.class
+     *     unwrap(int.class) == int.class
+     *     unwrap(String.class) == String.class
+     * </pre>
+     *
+     * @param type the type
+     * @return primitive type if it is a wrapper type, otherwise itself
      */
-    public static Class<?> unwrap(Class<?> wrapper) {
-        Class<?> unwrapped = WRAPPER_TO_PRIMITIVE_TYPE.get(wrapper);
-        return unwrapped != null ? unwrapped : wrapper;
+    public static Class<?> unwrap(final Class<?> type) {
+        final Class<?> unwrapped = WRAPPER_TO_PRIMITIVE_TYPE.get(type);
+        return unwrapped != null ? unwrapped : type;
     }
 
     /**
-     * 返回给定数组中包装器类型被基本数据类型替换后的数组
+     * Returns the corresponding primitive types of {@code types}.
      *
-     * @param wrappers
-     * @return
+     * @param types the types
+     * @return the primitive types
+     * @see #unwrap(Class)
      */
-    public static Class<?>[] unwrap(Class<?>[] wrappers) {
-        Class<?>[] unwrapped = new Class<?>[wrappers.length];
-
-        for (int i = 0; i < wrappers.length; i++) {
-            unwrapped[i] = unwrap(wrappers[i]);
+    public static Class<?>[] unwrap(final Class<?>[] types) {
+        final Class<?>[] unwrapped = new Class<?>[types.length];
+        for (int i = 0; i < types.length; i++) {
+            unwrapped[i] = unwrap(types[i]);
         }
         return unwrapped;
-    }
-
-    /*
-    public static boolean[] unwrap(Boolean[] values) {
-        return unwrap(values, false);
-    }
-
-    public static boolean[] unwrap(Boolean[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static boolean[] unwrap(Collection<Boolean> values, boolean nullToDefault) {
-        boolean[] results = new boolean[values.size()];
-        int i = 0;
-        for (Boolean value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Boolean value is null at " + (i + 1));
-                }
-                results[i++] = false;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-
-    public static byte[] unwrap(Byte[] values) {
-        return unwrap(values, false);
-    }
-
-    public static byte[] unwrap(Byte[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static byte[] unwrap(Collection<Byte> values, boolean nullToDefault) {
-        byte[] results = new byte[values.size()];
-        int i = 0;
-        for (Byte value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Byte value is null at " + (i + 1));
-                }
-                results[i++] = 0;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-
-    public static short[] unwrap(Short[] values) {
-        return unwrap(values, false);
-    }
-
-    public static short[] unwrap(Short[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static short[] unwrap(Collection<Short> values, boolean nullToDefault) {
-        short[] results = new short[values.size()];
-        int i = 0;
-        for (Short value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Short value is null at " + (i + 1));
-                }
-                results[i++] = 0;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-
-    public static int[] unwrap(Integer[] values) {
-        return unwrap(values, false);
-    }
-
-    public static int[] unwrap(Integer[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static int[] unwrap(Collection<Integer> values, boolean nullToDefault) {
-        int[] results = new int[values.size()];
-        int i = 0;
-        for (Integer value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Integer value is null at " + (i + 1));
-                }
-                results[i++] = 0;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-
-    public static long[] unwrap(Long[] values) {
-        return unwrap(values, false);
-    }
-
-    public static long[] unwrap(Long[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static long[] unwrap(Collection<Long> values, boolean nullToDefault) {
-        long[] results = new long[values.size()];
-        int i = 0;
-        for (Long value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Long value is null at " + (i + 1));
-                }
-                results[i++] = 0;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-
-    public static float[] unwrap(Float[] values) {
-        return unwrap(values, false);
-    }
-
-    public static float[] unwrap(Float[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static float[] unwrap(Collection<Float> values, boolean nullToDefault) {
-        float[] results = new float[values.size()];
-        int i = 0;
-        for (Float value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Float value is null at " + (i + 1));
-                }
-                results[i++] = 0;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-
-    public static double[] unwrap(Double[] values) {
-        return unwrap(values, false);
-    }
-
-    public static double[] unwrap(Double[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static double[] unwrap(Collection<Double> values, boolean nullToDefault) {
-        double[] results = new double[values.size()];
-        int i = 0;
-        for (Double value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Double value is null at " + (i + 1));
-                }
-                results[i++] = 0;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-
-    public static char[] unwrap(Character[] values) {
-        return unwrap(values, false);
-    }
-
-    public static char[] unwrap(Character[] values, boolean nullToDefault) {
-        return unwrap(Arrays.asList(values), nullToDefault);
-    }
-
-    public static char[] unwrap(Collection<Character> values, boolean nullToDefault) {
-        char[] results = new char[values.size()];
-        int i = 0;
-        for (Character value : values) {
-            if (null == value) {
-                if (!nullToDefault) {
-                    throw new IllegalStateException("Character value is null at " + (i + 1));
-                }
-                results[i++] = 0;
-            } else {
-                results[i++] = value;
-            }
-        }
-        return results;
-    }
-    */
-
-    private Primitives() {
     }
 }
