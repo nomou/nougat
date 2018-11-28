@@ -1,10 +1,10 @@
 package freework.proc;
 
-import freework.util.Arrays2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -228,7 +228,9 @@ public class ProcessStarter {
     }
 
     protected String[] merge(String[] array1, String[] array2) {
-        return Arrays2.mergeArrays(array1, array2);
+        final String[] merged = Arrays.copyOf(array1, array1.length + array2.length);
+        System.arraycopy(array2, 0, merged, array1.length, array2.length);
+        return merged;
     }
 
     private static String join(String sep, String... args) {

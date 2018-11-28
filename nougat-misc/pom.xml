@@ -30,6 +30,10 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>freework</groupId>
+            <artifactId>nougat-lang</artifactId>
+        </dependency>
         <!-- logging BEGIN -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -72,11 +76,6 @@
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
             <version>${zxing.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.lightly</groupId>
-            <artifactId>lightly-lang</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.github.fge</groupId>

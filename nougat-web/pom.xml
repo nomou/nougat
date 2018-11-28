@@ -24,6 +24,10 @@
             <version>4.9</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>freework</groupId>
+            <artifactId>nougat-lang</artifactId>
+        </dependency>
         <!-- logging BEGIN -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -32,6 +36,10 @@
             <optional>true</optional>
         </dependency>
         <!-- logging END -->
+        <dependency>
+            <groupId>javax.el</groupId>
+            <artifactId>javax.el-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
@@ -48,10 +56,6 @@
             <artifactId>antisamy</artifactId>
             <version>${antisamy.version}</version>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>freework</groupId>
-            <artifactId>nougat-lang</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>

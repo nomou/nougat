@@ -10,6 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>nougat-proc</artifactId>
+
     <properties>
         <!-- 4.1 must jdk 1.7, 4.0 jdk 1.6 但是总报错 -->
         <jna.version>3.4.0</jna.version>
@@ -22,6 +23,12 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>freework</groupId>
+            <artifactId>nougat-lang</artifactId>
+        </dependency>
+
         <!-- logging BEGIN -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -30,12 +37,6 @@
         </dependency>
         <!-- logging END -->
 
-
-        <dependency>
-            <groupId>freework</groupId>
-            <artifactId>nougat-lang</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
 
         <!-- JNA begin -->
         <dependency>
