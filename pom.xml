@@ -20,6 +20,13 @@
         <module>nougat-misc</module>
     </modules>
 
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>actable</distribution>
+        </license>
+    </licenses>
 
     <organization>
         <name>freework</name>
@@ -88,9 +95,9 @@
         <maven-enforcer-plugin.version>1.4</maven-enforcer-plugin.version>
         <!-- plugin versions ]] -->
         <!-- distributionManagement [[ -->
-        <dist.mgt.snap-repo.id>central</dist.mgt.snap-repo.id>
+        <dist.mgt.snap-repo.id>ossrh</dist.mgt.snap-repo.id>
         <dist.mgt.snap-repo.url>https://oss.sonatype.org/content/repositories/snapshots/</dist.mgt.snap-repo.url>
-        <dist.mgt.repo.id>central</dist.mgt.repo.id>
+        <dist.mgt.repo.id>ossrh</dist.mgt.repo.id>
         <dist.mgt.repo.url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</dist.mgt.repo.url>
         <!-- ]] distributionManagement -->
     </properties>
@@ -208,10 +215,26 @@
                     <charset>UTF-8</charset>
                     <encoding>UTF-8</encoding>
                     <docencoding>UTF-8</docencoding>
+                    <additionalparam>-Xdoclint:none</additionalparam>
                     <quiet>true</quiet>
                 </configuration>
             </plugin>
             <!-- ]] java source & javadoc plugin -->
+            <!-- GPG plugin [[ -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- ]] GPG -->
 
             <!-- p3c-pmd maven for code specification. [[ -->
             <plugin>

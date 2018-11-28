@@ -183,7 +183,8 @@ public class DateTime extends Date {
     /**
      * Returns a Calendar representing the this datetime.
      *
-     * @param zone the timezone
+     * @param zone   the timezone
+     * @param locale the locale
      * @return the calendar
      */
     public Calendar toCalendar(final TimeZone zone, final Locale locale) {
@@ -261,6 +262,7 @@ public class DateTime extends Date {
     /**
      * Returns a DateTime representing the specified date.
      *
+     * @param datetime the date
      * @return the datetime instance
      */
     public static DateTime wrap(final Date datetime) {
@@ -270,6 +272,7 @@ public class DateTime extends Date {
     /**
      * Returns a DateTime representing the specified calendar.
      *
+     * @param calendar the calendar
      * @return the datetime instance
      */
     public static DateTime wrap(final Calendar calendar) {

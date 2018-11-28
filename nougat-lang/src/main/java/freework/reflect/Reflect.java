@@ -283,6 +283,7 @@ public class Reflect {
     /**
      * Gets the field of wrapped object.
      *
+     * @param the name of field
      * @return the reflect for field
      */
     public Reflect field(final String field) {
@@ -852,11 +853,14 @@ public class Reflect {
 
     /**
      * Returns the class this method was called 'framesToSkip' frames up the caller hierarchy.
-     * <p>
-     * NOTE:
+     * <p>NOTE:
      * <b>Extremely expensive!
      * Please consider not using it.
      * These aren't the droids you're looking for!</b>
+     *
+     * @param framesToSkip TODO
+     * @param <T>          the class
+     * @return TODO
      */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> findCallerClass(final int framesToSkip) {

@@ -30,7 +30,7 @@ public abstract class StringUtils2 {
 
     /**
      * Check that the given CharSequence is neither {@code null} nor of length 0.
-     * <br/>Note: Will return {@code true} for a CharSequence that purely consists of whitespace.
+     * <br>Note: Will return {@code true} for a CharSequence that purely consists of whitespace.
      *
      * @param text the CharSequence to check (may be {@code null})
      * @return {@code true} if the CharSequence is not null and has length

@@ -10,13 +10,10 @@ import java.util.Arrays;
  * <p>
  * The implementation of this class supports the following types of Base64  as specified in
  * <a href="http://www.ietf.org/rfc/rfc4648.txt">RFC 4648</a> and <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>.
- * <p/>
  *
  * <p>JDK 1.8+ (testing at JDK 8, 9, 10?, 11) <code>java.util.Base64.get(Mime)Decoder().wrap(OutputStream)</code> decoding result
  * is WRONG when encoded bytes has one padding('=') and last read buffer length = reaming available length.
- * <p/>
- * <code>
- * <pre>
+ * <p><blockquote><pre>
  *    final byte[] encodedBytes = ("zFqMhDg=").getBytes();
  *    final byte[] decodedBytes = java.util.Base64.getDecoder().decode(encodedBytes);
  *    // CORRECT: [-52, 90, -116, -124, 56]
@@ -36,12 +33,10 @@ import java.util.Arrays;
  *
  *    // WRONG: [-52, 90, -116, -124, 56, 0, 0]
  *    System.out.println(Arrays.toString(jdkDecodeOut.toByteArray()));
- * </pre>
- * </code>
- * <br/>
+ * </pre></blockquote>
+ * <br>
  * line 934~955 already decoding over (eof = true):
- * <code>
- * <pre>
+ * <blockquote><pre>
  *     if (v == '=') {                  // padding byte(s)
  *        // ...
  *        if (nextin == 0) {           // only one padding byte
@@ -55,11 +50,9 @@ import java.util.Arrays;
  *          eof = true;
  *        // ...
  *     }
- * </pre>
- * </code>
+ * </pre></blockquote>
  * But, line 910~933 repeat decoding:
- * <code>
- * <pre>
+ * <blockquote><pre>
  *     int v = is.read();
  *     if (v == -1) {
  *         // WARN: should return -1 (EOF) if already eof = true and nextin = 0 and off = oldOff
@@ -79,8 +72,7 @@ import java.util.Arrays;
  *         }
  *         // ...
  *     }
- * </pre>
- * </code>
+ * </pre></blockquote>
  *
  * @author vacoor
  * @since 1.0
@@ -194,7 +186,7 @@ public abstract class Base64 {
 
     /**
      * Encodes the specified byte array into a String using the Base64 encoding scheme.
-     * <p/>
+     * <p>
      * No line breaks or other white space are inserted into the encoded data.
      *
      * @param bytes the byte array to encode
@@ -227,7 +219,7 @@ public abstract class Base64 {
 
     /**
      * Encodes all bytes from the specified byte array into a newly-allocated byte array using the Base64 encoding scheme.
-     * <p/>
+     * <p>
      * No line breaks or other white space are inserted into the encoded data.
      *
      * @param bytes the byte array to encode
@@ -295,7 +287,7 @@ public abstract class Base64 {
 
     /**
      * Encodes all bytes from the specified byte array into a character array using the Base64 encoding scheme.
-     * <p/>
+     * <p>
      * No line breaks or other white space are inserted into the encoded data.
      *
      * @param bytes the byte array to encode

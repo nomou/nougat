@@ -11,7 +11,6 @@ import java.lang.reflect.Method;
 /**
  * Proxy2 provides static methods for creating proxy objects on runtime,
  * and unlike JDK dynamic proxy, Proxy2 is not mandatory to create proxy instances based on interfaces.
- * <p>
  * <p>If the given class is an interface, the jdk dynamic proxy will be used, otherwise cglib / javassist will be tried.
  *
  * @author vacoor

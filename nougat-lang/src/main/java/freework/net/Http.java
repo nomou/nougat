@@ -28,9 +28,9 @@ import java.util.*;
  * <p>
  * By default, 'Orign', 'Host' request header is not allowed to be set,
  * if you need to set up you can use the following code:
- * <code>
- * <pre>System.setProperty("sun.net.http.allowRestrictedHeaders", "true");</pre>
- * </code>
+ * <blockquote><pre>
+ * System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+ * </pre></blockquote>
  *
  * @author vacoor
  * @since 1.0
@@ -257,7 +257,7 @@ public abstract class Http {
     }
 
     /**
-     * Builds not encoded http query string(n=v&n=v..).
+     * Builds not encoded http query string(n=v&amp;n=v..).
      *
      * @param params the name-value pairs
      * @return the query string
@@ -267,7 +267,7 @@ public abstract class Http {
     }
 
     /**
-     * Builds not encoded http query string(n=v&n=v..).
+     * Builds not encoded http query string(n=v&amp;n=v..).
      *
      * @param params the name-value pairs
      * @return the query string
@@ -277,7 +277,7 @@ public abstract class Http {
     }
 
     /**
-     * Builds http query string(n=v&n=v..).
+     * Builds http query string(n=v&amp;n=v..).
      *
      * @param charset the url encode encoding, not encode if null
      * @param params  the name-value pairs
@@ -306,7 +306,7 @@ public abstract class Http {
     }
 
     /**
-     * Builds http query string(n=v&n=v..).
+     * Builds http query string(n=v&amp;n=v..).
      *
      * @param charset the url encode encoding, not encode if null
      * @param params  the name-value pairs
@@ -737,7 +737,7 @@ public abstract class Http {
      * @param method      http request method
      * @param keyManagers https key managers
      * @return HttpURLConnection/HttpsURLConnection instance
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection open(final String serverUrl, final String method,
                                          final KeyManager... keyManagers) throws IOException {

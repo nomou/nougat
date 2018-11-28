@@ -390,8 +390,8 @@ public class Path implements Comparable, Cloneable {
     /**
      * Creates an path object, using the given parent and child paths.
      * <p>
-     * base: a/b, child: c/d, return: a/b/c/d <br/>
-     * base: a/b, child: /c/d, return: a/b/c/d <br/>
+     * base: a/b, child: c/d, return: a/b/c/d <br>
+     * base: a/b, child: /c/d, return: a/b/c/d <br>
      *
      * @param base  the parent path
      * @param child the child path

@@ -26,6 +26,7 @@ public abstract class Arrays2 {
      *
      * @param elementType the component type
      * @param collection  the collection of elements
+     * @param <E>         the component instance type
      * @return the new array
      */
     public static <E> E[] create(final Class<E> elementType, final Collection<? extends E> collection) {
@@ -37,6 +38,7 @@ public abstract class Arrays2 {
      *
      * @param elementType the component type
      * @param mElements   the collection of elements
+     * @param <E>         the component instance type
      * @return the new array
      */
     @SuppressWarnings("unchecked")
@@ -64,6 +66,7 @@ public abstract class Arrays2 {
      * @param elementType the component type
      * @param len         the length of the copy to be returned
      * @param collection  the collection of elements
+     * @param <E>         the component instance type
      * @return the new array, truncated or padded with nulls to obtain the specified length
      */
     @SuppressWarnings("unchecked")
@@ -357,6 +360,7 @@ public abstract class Arrays2 {
      *
      * @param array the array to be searched
      * @param value the value to be searched for
+     * @param <E>   the component instance type
      * @return index of the search key if it is contained, otherwise -1
      */
     public static <E> int search(final E[] array, final E value) {
@@ -370,6 +374,7 @@ public abstract class Arrays2 {
      * @param fromIndex the index of the first element (inclusive) to be searched
      * @param toIndex   the index of the last element (exclusive) to be searched
      * @param value     the value to be searched for
+     * @param <E>       the component instance type
      * @return index of the search key if it is contained, otherwise -1
      */
     @SuppressWarnings("PMD.AvoidComplexConditionRule")
@@ -397,6 +402,7 @@ public abstract class Arrays2 {
      * Returns a string containing the string representation of each of elements, using the separator between each.
      *
      * @param array the array
+     * @param sep   the separator
      * @return the string
      */
     public static String toString(final Object array, final String sep) {
@@ -409,6 +415,7 @@ public abstract class Arrays2 {
      * @param array     the array
      * @param fromIndex the index of the first element (inclusive)
      * @param toIndex   the index of the last element (exclusive)
+     * @param sep       the separator
      * @return the string
      */
     public static String toString(final Object array, final int fromIndex, final int toIndex, final String sep) {

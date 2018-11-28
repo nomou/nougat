@@ -55,6 +55,8 @@ public abstract class TypeReference<T> {
 
     /**
      * Gets underlying {@code Type} instance.
+     *
+     * @return the underlying type
      */
     public final Type getType() {
         return type;

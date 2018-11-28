@@ -5,7 +5,7 @@ import java.lang.reflect.*;
 /**
  * Switch-style type judgment.
  *
- * @param <T>
+ * @param <T> the target type
  * @author vacoor
  * @since 1.0
  */
