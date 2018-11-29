@@ -5,11 +5,11 @@
  */
 package freework.xml;
 
-import freework.util.StringUtils2;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import javax.xml.bind.*;
+import javax.xml.bind.DataBindingException;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 import javax.xml.bind.annotation.XmlAnyElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.namespace.QName;
@@ -17,294 +17,280 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.*;
+import java.beans.Introspector;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.ref.WeakReference;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.Map;
 import java.util.WeakHashMap;
 
 /**
- * TODO complete me.
+ * Class that defines convenience methods for common, simple use of JAXB.
  *
- * JAXB 2 工具类
- * 简单封装 XML &lt;--&gt; JAXB Object
- * 支持没有使用注解的 Java Bean, JavaBean[] --&gt; XML
- * <p>
- * 没有支持 {@link javax.xml.validation.Schema} 验证
+ * <p>NOTE: This class provides the following features compared to {@link javax.xml.bind.JAXB}:
+ * <br>1. Added support for XML string literals
+ * <br>2. {@code marshal} method supports arrays
+ * <br>3. Added the {@code marshalAny} method to process the array</p>
  *
  * @author vacoor
  * @see javax.xml.bind
+ * @see javax.xml.bind.JAXB
+ * @since 1.0
  */
-@SuppressWarnings("PMD")
-abstract class JAXB2 {
-    private static final String DEFAULT_ENCODING = "UTF-8";
-
-    private static volatile Map<Class, WeakReference<JAXBContext>> contextCache = new WeakHashMap<Class, WeakReference<JAXBContext>>();
-    private static final Object CONTEXT_MONITOR = new Object();
-
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "PMD.AbstractClassShouldStartWithAbstractNamingRule"})
+public abstract class JAXB2 {
+    /**
+     * UTF-8 charset.
+     */
+    private static final String UTF_8 = "UTF-8";
 
     /**
-     * obj --&gt; xml string
-     *
-     * @param obj
-     * @return
+     * The JAXB context monitor.
      */
-    public static String marshal(Object obj) {
-        return marshal(obj, DEFAULT_ENCODING);
+    private static final Object CONTEXT_MONITOR = new Object();
+
+    /**
+     * The JAXB context cache.
+     */
+    private static volatile Map<Class, WeakReference<JAXBContext>> CACHE = new WeakHashMap<Class, WeakReference<JAXBContext>>();
+
+    /**
+     * Non-instantiate.
+     */
+    private JAXB2() {
     }
 
     /**
-     * obj --&gt; xml string
+     * Writes a Java object tree into XML string.
      *
-     * @param obj
-     * @param encoding
-     * @return
+     * @param obj the Java object to be marshalled into XML
+     * @return the xml string
      */
-    public static String marshal(Object obj, String encoding) {
-        StringWriter writer = new StringWriter();
-        marshal(obj, writer, encoding);
+    public static String marshal(final Object obj) {
+        return marshal(obj, UTF_8);
+    }
 
+    /**
+     * Writes a Java object tree into XML string.
+     *
+     * @param obj      the Java object to be marshalled into XML
+     * @param encoding the xml encoding
+     * @return the xml string
+     */
+    public static String marshal(final Object obj, final String encoding) {
+        final StringWriter writer = new StringWriter();
+        marshal(obj, writer, encoding);
         return writer.toString();
     }
 
     /**
-     * @param obj
-     * @param os
-     * @param encoding
+     * Writes a Java object tree to XML and store it to the specified location.
+     *
+     * @param obj      the Java object to be marshalled into XML
+     * @param file     XML will be written to this file. If it already exists, it will be overwritten
+     * @param encoding the xml encoding
      */
-    public static void marshal(Object obj, OutputStream os, String encoding) {
-        marshal(obj, new StreamResult(os), encoding);
-    }
-
-    public static void marshal(Object obj, Writer writer, String encoding) {
-        marshal(obj, new StreamResult(writer), encoding);
-    }
-
-    public static void marshal(Object obj, URL url, String encoding) {
-        try {
-            URLConnection conn = url.openConnection();
-            conn.setDoInput(false);
-            conn.setDoOutput(true);
-            conn.connect();
-            marshal(obj, conn.getOutputStream(), encoding);
-        } catch (IOException e) {
-            throw new DataBindingException(e);
-        }
-    }
-
-    public static void marshal(Object obj, File file, String encoding) {
+    public static void marshal(final Object obj, final File file, final String encoding) {
         marshal(obj, new StreamResult(file), encoding);
+    }
+
+    /**
+     * Writes a Java object tree to XML and store it to the specified output stream.
+     *
+     * @param obj      the Java object to be marshalled into XML
+     * @param out      the output stream to store
+     * @param encoding the xml encoding
+     */
+    public static void marshal(final Object obj, final OutputStream out, final String encoding) {
+        marshal(obj, new StreamResult(out), encoding);
+    }
+
+    /**
+     * Writes a Java object tree to XML and store it to the specified writer.
+     *
+     * @param obj      the Java object to be marshalled into XML
+     * @param writer   the writer stream to store
+     * @param encoding the xml encoding
+     */
+    public static void marshal(final Object obj, final Writer writer, final String encoding) {
+        marshal(obj, new StreamResult(writer), encoding);
     }
 
 
     /**
-     * 将 JAXB 对象转换为 XML
-     * 也支持普通JavaBean / JavaBean[] 转换为XML
-     * <p>
-     * 注:
-     * JAXB 中要求编组对象必须是JAXBElement或 @XmlRootElement标注的对象
-     * 这里进行处理,可以自动将普通JavaBean转换为JAXBElement进行编组
-     * <p>
+     * Writes a Java object tree to XML and store it to the specified location.
      *
-     * @param obj
-     * @param result
-     * @param encoding
+     * @param obj      the Java object to be marshalled into XML
+     * @param result   represents the receiver of XML
+     * @param encoding the xml encoding
      * @see javax.xml.transform.Result
      */
     @SuppressWarnings("unchecked")
-    public static void marshal(Object obj, Result result, String encoding) {
+    public static void marshal(final Object obj, final Result result, final String encoding) {
         try {
             JAXBContext context;
-
-            /* 如果是JAXBElement,则获取定义类型的上下文 */
+            Object source = obj;
             if (obj instanceof JAXBElement) {
-                context = getContext(((JAXBElement) obj).getDeclaredType());
+                // if obj is a instance of JAXBElement, using its definition type
+                context = getContext(((JAXBElement<?>) obj).getDeclaredType());
             } else {
+                // using getClass() if it is annotation bean / normal bean
+                final Class<?> clazz = obj.getClass();
+                final XmlRootElement annotation = clazz.getAnnotation(XmlRootElement.class);
 
-                /* 对于使用Annotation 和 普通JavaBean 直接获取定义类的context */
-                Class<?> clazz = obj.getClass();
                 context = getContext(clazz);
-
-                /* 如果没有使用@XmlRootElement注解,需要转换为JAXBElement才能marshal */
-                if (!clazz.isInterface() && !clazz.isAnnotationPresent(XmlRootElement.class)) {
-                    String qname = StringUtils2.uncapitalize(clazz.getSimpleName());
-
-                    /* any +"s"作为QName */
+                if (null == annotation) {
+                    String qname;
                     if (clazz.isArray()) {
-                        qname = StringUtils2.uncapitalize(clazz.getComponentType().getSimpleName()) + 's';
-                    } /*else if (obj instanceof Collection<?>) {
-                        qname = "items";
-                        obj = AnyWrapper.wrap((Collection<?>)obj);
+                        qname = clazz.getComponentType().getSimpleName() + "s";
+                    } else {
+                        qname = clazz.getSimpleName();
                     }
-                    */
-
-                    obj = new JAXBElement(new QName(qname), clazz, obj);
+                    qname = Introspector.decapitalize(qname);
+                    source = new JAXBElement(new QName(qname), clazz, obj);
                 }
             }
-            Marshaller marshaller = context.createMarshaller();
+
+            final Marshaller marshaller = context.createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
             marshaller.setProperty(Marshaller.JAXB_ENCODING, encoding);
-            marshaller.marshal(obj, result);
-        } catch (JAXBException je) {
+            marshaller.marshal(source, result);
+        } catch (final JAXBException je) {
             throw new DataBindingException(je);
         }
     }
 
     /**
-     * xml String --&gt; object
+     * Reads in a Java object tree from the given XML string.
      *
-     * @param xml
-     * @param type
-     * @param <T>
-     * @return
+     * @param xml  the XML string
+     * @param type the jaxb object class
+     * @param <T>  the jaxb object type
+     * @return the jaxb object
      */
-    public static <T> T unmarshal(String xml, Class<T> type) {
-        StringReader reader = new StringReader(xml);
-        return unmarshal(reader, type);
+    public static <T> T unmarshal(final String xml, final Class<T> type) {
+        return unmarshal(new StringReader(xml), type);
     }
 
     /**
-     * 解组 xml 到给定 JAXB 对象
+     * Reads in a Java object tree from the given XML input.
      *
-     * @param xml
-     * @param type
-     * @param <T>
-     * @return
+     * @param xml  reads the entire file as XML.
+     * @param type the jaxb object class
+     * @param <T>  the jaxb object type
+     * @return the jaxb object
      */
     public static <T> T unmarshal(File xml, Class<T> type) {
         return unmarshal(new StreamSource(xml), type);
     }
 
-    public static <T> T unmarshal(InputStream is, Class<T> type) {
-        return unmarshal(new StreamSource(is), type);
+    /**
+     * Reads in a Java object tree from the given XML input.
+     *
+     * @param in   the entire stream is read as an XML infoset.
+     *             upon a successful completion, the stream will be closed by this method.
+     * @param type the jaxb object class
+     * @param <T>  the jaxb object type
+     * @return the jaxb object
+     */
+    public static <T> T unmarshal(final InputStream in, final Class<T> type) {
+        return unmarshal(new StreamSource(in), type);
     }
 
-    public static <T> T unmarshal(Reader reader, Class<T> type) {
+    /**
+     * Reads in a Java object tree from the given XML input.
+     *
+     * @param reader the character stream is read as an XML infoset.
+     * @param type   the jaxb object class
+     * @param <T>    the jaxb object type
+     * @return the jaxb object
+     */
+    public static <T> T unmarshal(final Reader reader, final Class<T> type) {
         return unmarshal(new StreamSource(reader), type);
     }
 
-    public static <T> T unmarshal(URL url, Class<T> type) {
-        return unmarshal(new StreamSource(url.toExternalForm()), type);
-    }
-
+    /**
+     * Reads in a Java object tree from the given XML input.
+     *
+     * @param source the XML infoset that the {@link Source} represents is read.
+     * @param type   the jaxb object class
+     * @param <T>    the jaxb object type
+     * @return the jaxb object
+     */
     @SuppressWarnings("unchecked")
-    public static <T> T unmarshal(InputSource is, Class<T> type) {
+    public static <T> T unmarshal(final Source source, final Class<T> type) {
         try {
-            return (T) getContext(type).createUnmarshaller().unmarshal(is);
-        } catch (JAXBException e) {
+            return getContext(type).createUnmarshaller().unmarshal(source, type).getValue();
+        } catch (final JAXBException e) {
             throw new DataBindingException(e);
         }
     }
 
+
     /**
-     * 将javax.xml.transform.Source 转换为给定的类实例
+     * Writes a Java array using the QName wrapper into a string.
      *
-     * @param source
-     * @param type
-     * @param <T>
-     * @return
+     * @param elements  the Java array to be marshalled into XML
+     * @param wrapQName the QName of wrapper
      */
-    @SuppressWarnings("unchecked")
-    public static <T> T unmarshal(Source source, Class<T> type) {
-        try {
-            // 解组时如果传入类型,则会返回一个泛型JAXBElement对象value为解组后对象,
-            // 否则返回一个解组后的对象,但是需要强转,
-            // return (S) getContext(type).createUnmarshaller().unmarshal(source);
-            /*-
-              该方式始终都会返回一个对象, 即使失败，当一个对象可能是A,B时unmarshal 失败无法判定
-              JAXBElement<T> je = getContext(type).createUnmarshaller().unmarshal(source, type);
-            return je.getValue();
-             */
-            Object obj = getContext(type).createUnmarshaller().unmarshal(source);
-            if (!type.isInstance(obj)) {
-                throw new JAXBException(String.format("cannot be unmarshal %s to %s", source, type));
-            }
-            return (T) obj;
-        } catch (JAXBException e) {
-            throw new DataBindingException(e);
-        }
+    public static <T> String marshalAny(final T[] elements, final String wrapQName) {
+        return marshalAny(elements, wrapQName, UTF_8);
     }
 
     /**
-     * 使用 给定 QName 来包装数组并编组为 xml
+     * Writes a Java array using the QName wrapper into a string.
      *
-     * @param elements  要序列化的对象数组
-     * @param wrapQName 根节点 QName
-     * @param <T>
-     * @return
+     * @param elements  the Java array to be marshalled into XML
+     * @param wrapQName the QName of wrapper
+     * @param encoding  the xml encoding
      */
-    public static <T> String marshalAny(T[] elements, String wrapQName) {
-        return marshalAny(elements, wrapQName, DEFAULT_ENCODING);
-    }
-
-    /**
-     * 使用 给定 QName 来包装数组并编组为 xml
-     *
-     * @param elements  要序列化的对象数组
-     * @param wrapQName 根节点 QName
-     * @param encoding  字符编码
-     * @param <T>
-     * @return
-     */
-    public static <T> String marshalAny(T[] elements, String wrapQName, String encoding) {
-        StringWriter writer = new StringWriter();
+    public static <T> String marshalAny(final T[] elements, final String wrapQName, final String encoding) {
+        final StringWriter writer = new StringWriter();
         marshalAny(elements, wrapQName, writer, encoding);
         return writer.toString();
     }
 
     /**
-     * 使用 给定 QName 来包装数组并编组为 xml
+     * Writes a Java array using the QName wrapper into the writer.
      *
-     * @param elements  要序列化的对象数组
-     * @param wrapQName 根节点 QName
-     * @param writer    输出流
-     * @param encoding  字符编码
-     * @param <T>       T
+     * @param elements  the Java array to be marshalled into XML
+     * @param wrapQName the QName of wrapper
+     * @param writer    the writer to store
+     * @param encoding  the xml encoding
      */
-    public static <T> void marshalAny(T[] elements, String wrapQName, Writer writer, String encoding) {
+    public static <T> void marshalAny(final T[] elements, final String wrapQName, final Writer writer, final String encoding) {
         try {
-            Class<?> compType = elements.getClass().getComponentType();
-            if (Object.class == compType) {
+            final Class<?> componentType = elements.getClass().getComponentType();
+            if (Object.class == componentType) {
                 throw new UnsupportedOperationException("unsupported object array");
             }
 
-            AnyWrapper<T> wrapper = AnyWrapper.wrap(elements);
-            JAXBElement<AnyWrapper> root = new JAXBElement<AnyWrapper>(new QName(wrapQName), AnyWrapper.class, wrapper);
-
-            JAXBContext context = getContext(compType);
-            Marshaller marshaller = context.createMarshaller();
+            final AnyWrapper<T> wrapper = AnyWrapper.wrap(elements);
+            final JAXBElement<AnyWrapper> root = new JAXBElement<AnyWrapper>(new QName(wrapQName), AnyWrapper.class, wrapper);
+            final Marshaller marshaller = getContext(componentType).createMarshaller();
             marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
             marshaller.setProperty(Marshaller.JAXB_ENCODING, encoding);
             marshaller.marshal(root, writer);
-        } catch (JAXBException je) {
+        } catch (final JAXBException je) {
             throw new DataBindingException(je);
         }
     }
 
-    public static <T> T[] unmarshalAny(String xml, Class<T> type, String ignore) {
-        try {
-            JAXBContext context = getContext(type);
-            Unmarshaller unmarshaller = context.createUnmarshaller();
-            unmarshaller.getUnmarshallerHandler().skippedEntity(ignore);
-        } catch (JAXBException e) {
-            throw new DataBindingException(e);
-        } catch (SAXException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     /**
-     * 允许获取 Context,进行其他操作eg: 验证
+     * Obtains the {@link JAXBContext} from the given type, by using the cache if possible.
      *
-     * @param type
-     * @return
-     * @throws javax.xml.bind.JAXBException
+     * @param type the bound type
+     * @return the jaxb context
+     * @throws javax.xml.bind.JAXBException if an error occurs
      */
-    public static JAXBContext getContext(Class<?> type) throws JAXBException {
+    public static JAXBContext getContext(final Class<?> type) throws JAXBException {
         JAXBContext context = null;
-        WeakReference<JAXBContext> ref = contextCache.get(type);
+        WeakReference<JAXBContext> ref = CACHE.get(type);
         if (ref != null) {
             context = ref.get();
             if (context != null) {
@@ -312,29 +298,26 @@ abstract class JAXB2 {
             }
         }
         synchronized (CONTEXT_MONITOR) {
-            ref = contextCache.get(type);
+            ref = CACHE.get(type);
             if (ref == null || ref.get() == null) {
                 context = JAXBContext.newInstance(type, AnyWrapper.class);
-                contextCache.put(type, new WeakReference<JAXBContext>(context));
+                CACHE.put(type, new WeakReference<JAXBContext>(context));
             }
         }
         return context;
     }
 
     /**
-     * 封装Root Element 是 Collection 的情况.
+     * Wrapper for array.
      */
-    public static class AnyWrapper<T> {
+    private static class AnyWrapper<T> {
         @XmlAnyElement
         protected T[] any;
 
-        static <T> AnyWrapper<T> wrap(T[] any) {
-            AnyWrapper<T> root = new AnyWrapper<T>();
+        static <T> AnyWrapper<T> wrap(final T[] any) {
+            final AnyWrapper<T> root = new AnyWrapper<T>();
             root.any = any;
             return root;
         }
-    }
-
-    private JAXB2() {
     }
 }

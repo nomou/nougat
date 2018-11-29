@@ -104,6 +104,7 @@ public class DelegatingPreparedStatement extends DelegatingStatement implements 
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public void setUnicodeStream(final int parameterIndex, final InputStream x, final int length) throws SQLException {
         statement.setUnicodeStream(parameterIndex, x, length);
     }

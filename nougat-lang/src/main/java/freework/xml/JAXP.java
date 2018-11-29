@@ -1,17 +1,17 @@
 package freework.xml;
 
 import freework.util.Throwables;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.XMLConstants;
-import javax.xml.parsers.*;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -23,29 +23,59 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 
 /**
- * TODO complete me.
- * 对 JAXP 简单封装
+ * Class that defines convenience methods for common, simple use of JAXP.
  *
  * @author vacoor
  * @see javax.xml.parsers
+ * @since 1.0
  */
-@SuppressWarnings("PMD")
-abstract class JAXP {
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "PMD.AbstractClassShouldStartWithAbstractNamingRule"})
+public abstract class JAXP {
     private static final Charset UTF_8 = Charset.forName("UTF-8");
 
+    /**
+     * Non-instantiate.
+     */
+    private JAXP() {
+    }
 
+    /**
+     * Parse the content given string as XML using the specified {@link org.xml.sax.helpers.DefaultHandler}.
+     *
+     * @param xml     The string content to be parsed.
+     * @param handler The SAX DefaultHandler to use.
+     */
     public static void parse(final String xml, final DefaultHandler handler) {
         parse(new StringReader(xml), handler);
     }
 
+    /**
+     * Parse the content given input stream as XML using the specified {@link org.xml.sax.helpers.DefaultHandler}.
+     *
+     * @param in      The input stream containing the content to be parsed.
+     * @param charset The charset of input stream
+     * @param handler The SAX DefaultHandler to use.
+     */
     public static void parse(final InputStream in, final Charset charset, final DefaultHandler handler) {
         parse(new InputStreamReader(in, null != charset ? charset : UTF_8), handler);
     }
 
+    /**
+     * Parse the content given reader as XML using the specified {@link org.xml.sax.helpers.DefaultHandler}.
+     *
+     * @param reader  The reader containing the content to be parsed.
+     * @param handler The SAX DefaultHandler to use.
+     */
     public static void parse(final Reader reader, final DefaultHandler handler) {
         parse(new InputSource(reader), handler);
     }
 
+    /**
+     * Parse the content given {@link org.xml.sax.InputSource} as XML using the specified {@link org.xml.sax.helpers.DefaultHandler}.
+     *
+     * @param source  The InputSource containing the content to be parsed.
+     * @param handler The SAX DefaultHandler to use.
+     */
     public static void parse(final InputSource source, final DefaultHandler handler) {
         try {
             final SAXParser parser = newParser();
@@ -55,19 +85,44 @@ abstract class JAXP {
         }
     }
 
+    /**
+     * Parses the content of the given input stream as an XML document.
+     *
+     * @param xml the string of xml
+     * @return A new DOM Document object.
+     */
     public static Document read(final String xml) {
         return read(new StringReader(xml));
     }
 
+    /**
+     * Parses the content of the given input stream as an XML document.
+     *
+     * @param in      the input stream
+     * @param charset the charset
+     * @return A new DOM Document object.
+     */
     public static Document read(final InputStream in, Charset charset) {
         charset = null != charset ? charset : UTF_8;
         return read(new InputStreamReader(in, charset));
     }
 
+    /**
+     * Parses the content of the given reader as an XML document.
+     *
+     * @param reader the reader
+     * @return A new DOM Document object.
+     */
     public static Document read(final Reader reader) {
         return read(new InputSource(reader));
     }
 
+    /**
+     * Parses the content of the given input source as an XML document.
+     *
+     * @param source the input source
+     * @return A new DOM Document object.
+     */
     public static Document read(final InputSource source) {
         try {
             DocumentBuilder builder = newBuilder();
@@ -82,15 +137,20 @@ abstract class JAXP {
      * ************************************/
 
     /**
-     * 根据给定的 DTD 或 Schema 创建一个 SAXParser
-     * 如果希望捕获错误, Handler 可以继承 {@link ErrorCaptureHandler}
+     * Creates a new instance of a SAXParser.
      *
-     * @return
+     * @return the SAXParser
      */
     public static SAXParser newParser() {
         return newParser(null);
     }
 
+    /**
+     * Creates a new instance of a SAXParser.
+     *
+     * @param schema <code>Schema</code> to use, <code>null</code> to remove a schema.
+     * @return the SAXParser
+     */
     public static SAXParser newParser(final Schema schema) {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -108,7 +168,7 @@ abstract class JAXP {
      * **************************************/
 
     /**
-     * Creates a new {@code DocumentBuilder} using default configuration.
+     * Creates a new instance of {@code DocumentBuilder} using default configuration.
      *
      * @return the new DocumentBuilder object
      */
@@ -116,6 +176,12 @@ abstract class JAXP {
         return newBuilder(null);
     }
 
+    /**
+     * Creates a new instance of <code>DocumentBuilder</code>.
+     *
+     * @param schema the schema
+     * @return the {@code DocumentBuilder} instance
+     */
     public static DocumentBuilder newBuilder(final Schema schema) {
         try {
             final DocumentBuilderFactory factory = newBuilderFactory(schema);
@@ -125,6 +191,21 @@ abstract class JAXP {
         }
     }
 
+    /**
+     * Creates a new instance of <code>DocumentBuilder</code>.
+     *
+     * @param ignoreComments          true if the parser will ignore comments
+     * @param ignoreContentWhitespace true if the factory must eliminate whitespace in element content
+     *                                (sometimes known loosely as 'ignorable whitespace') when parsing XML documents.
+     *                                Note that only whitespace which is directly contained within element content that
+     *                                has an element only content model (see XML Rec 3.2.1) will be eliminated.
+     * @param coalescing              true if the parser produced will convert CDATA nodes
+     *                                to Text nodes and append it to the adjacent (if any)
+     *                                text node; false otherwise.
+     * @param allowedExternalEntity   true if the parser produced will expand entity reference nodes; false otherwise.
+     * @param schema                  <code>Schema</code> to use, <code>null</code> to remove a schema.
+     * @return the {@code DocumentBuilder} instance
+     */
     public static DocumentBuilder newBuilder(final boolean ignoreComments, final boolean ignoreContentWhitespace,
                                              final boolean coalescing, final boolean allowedExternalEntity,
                                              final Schema schema) {
@@ -138,14 +219,40 @@ abstract class JAXP {
         }
     }
 
+    /**
+     * Creates a new instance of <code>DocumentBuilderFactory</code>.
+     *
+     * @return the {@code DocumentBuilderFactory} instance
+     */
     public static DocumentBuilderFactory newBuilderFactory() {
         return newBuilderFactory(null);
     }
 
+    /**
+     * Creates a new instance of <code>DocumentBuilderFactory</code>.
+     *
+     * @param schema <code>Schema</code> to use, <code>null</code> to remove a schema.
+     * @return the {@code DocumentBuilderFactory} instance
+     */
     public static DocumentBuilderFactory newBuilderFactory(final Schema schema) {
-        return newBuilderFactory(true, true, true, false, schema);
+        return newBuilderFactory(false, false, true, false, schema);
     }
 
+    /**
+     * Creates a new instance of <code>DocumentBuilderFactory</code>.
+     *
+     * @param ignoreComments          true if the parser will ignore comments
+     * @param ignoreContentWhitespace true if the factory must eliminate whitespace in element content
+     *                                (sometimes known loosely as 'ignorable whitespace') when parsing XML documents.
+     *                                Note that only whitespace which is directly contained within element content that
+     *                                has an element only content model (see XML Rec 3.2.1) will be eliminated.
+     * @param coalescing              true if the parser produced will convert CDATA nodes
+     *                                to Text nodes and append it to the adjacent (if any)
+     *                                text node; false otherwise.
+     * @param allowedExternalEntity   true if the parser produced will expand entity reference nodes; false otherwise.
+     * @param schema                  <code>Schema</code> to use, <code>null</code> to remove a schema.
+     * @return the {@code DocumentBuilderFactory} instance
+     */
     public static DocumentBuilderFactory newBuilderFactory(final boolean ignoreComments, final boolean ignoreContentWhitespace,
                                                            final boolean coalescing, final boolean allowedExternalEntity,
                                                            final Schema schema) {
@@ -222,53 +329,42 @@ abstract class JAXP {
      *            DTD / Schema
      * ***************************************/
 
-    public static Schema newSchema(final InputStream schema, final Charset charset, boolean dtd) {
-        return newSchema(new InputStreamReader(schema, null != charset ? charset : UTF_8), dtd);
+    /**
+     * Creates a schema instance with the given schema reader.
+     *
+     * @param input   the input stream of schema
+     * @param charset the charset of schema
+     * @param dtd     true if the source is dtd
+     * @return the schema instance
+     */
+    public static Schema newSchema(final InputStream input, final Charset charset, boolean dtd) {
+        return newSchema(new InputStreamReader(input, null != charset ? charset : UTF_8), dtd);
     }
 
+    /**
+     * Creates a schema instance with the given schema reader.
+     *
+     * @param reader the reader of schema
+     * @param dtd    true if the source is dtd
+     * @return the schema instance
+     */
     public static Schema newSchema(final Reader reader, final boolean dtd) {
         return newSchema(new StreamSource(reader), dtd);
     }
 
+    /**
+     * Creates a schema instance with the given schema source.
+     *
+     * @param schema the source of schema
+     * @param dtd    true if the source is dtd
+     * @return the schema instance
+     */
     public static Schema newSchema(final Source schema, final boolean dtd) {
         final String schemaLang = dtd ? XMLConstants.XML_DTD_NS_URI : XMLConstants.W3C_XML_SCHEMA_NS_URI;
         try {
             return SchemaFactory.newInstance(schemaLang).newSchema(schema);
         } catch (final SAXException e) {
             return Throwables.unchecked("Failed to create schema, type is " + (dtd ? "DTD" : "SCHEMA"), e);
-        }
-    }
-
-    /**
-     * The error capture handler for SAX.
-     */
-    private static class ErrorCaptureHandler extends DefaultHandler {
-        private static final Logger LOG = LoggerFactory.getLogger(ErrorCaptureHandler.class);
-
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            LOG.debug("tag: {}", qName);
-        }
-
-        @Override
-        public void warning(SAXParseException e) throws SAXException {
-            // you can choose not to handle it
-            throw new SAXException(getMessage("Warning", e));
-        }
-
-        @Override
-        public void error(SAXParseException e) throws SAXException {
-            throw new SAXException(getMessage("Error", e));
-        }
-
-        @Override
-        public void fatalError(SAXParseException e) throws SAXException {
-            throw new SAXException(getMessage("Fatal Error", e));
-        }
-
-        private String getMessage(String level, SAXParseException e) {
-            return ("Parsing " + level + "\n" + "Line:    " + e.getLineNumber() + "\n"
-                    + "Message: " + e.getMessage());
         }
     }
 }

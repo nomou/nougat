@@ -1,6 +1,10 @@
 package freework.codec;
 
-import java.io.*;
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 
 /**
@@ -655,7 +659,7 @@ public abstract class Base64 {
         /**
          * @param in       input stream to wrap
          * @param doEncode true if encode all data read from input stream, false if we should decode.
-         * @param mime     TODO document it.
+         * @param mime     insert line breaks into encoded data for rfc2045
          */
         private Input(final InputStream in, final byte[] base64, final boolean doEncode, final boolean mime) {
             super(in);
