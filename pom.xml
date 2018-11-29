@@ -4,14 +4,14 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>freework</groupId>
+    <groupId>com.github.nomou</groupId>
     <artifactId>nougat</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>nougat</name>
+    <url>https://github.com/nomou/nougat/</url>
     <description>Nougat - a light java toolkit</description>
-    <url>https://gitee.com/freework-team/nougat/</url>
 
     <modules>
         <module>nougat-lang</module>
@@ -29,8 +29,8 @@
     </licenses>
 
     <organization>
-        <name>freework</name>
-        <url>https://gitee.com/freework-team/</url>
+        <name>nomou</name>
+        <url>https://github.com/nomou/</url>
     </organization>
 
     <developers>
@@ -41,21 +41,22 @@
     </developers>
 
     <scm>
-        <url>https://gitee.com/freework-team/nougat</url>
-        <connection>scm:git:git@gitee.com:freework-team/nougat.git</connection>
-        <developerConnection>scm:git:git@gitee.com:freework-team/nougat.git</developerConnection>
+        <url>https://github.com/nomou/nougat</url>
+        <connection>scm:git:git@github.com:nomou/nougat.git</connection>
+        <developerConnection>scm:git:git@github.com:nomou/nougat.git</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>git@gitee Issue Management</system>
-        <url>https://gitee.com/freework-team/nougat/issues</url>
+        <url>https://github.com/nomou/nougat/issues</url>
     </issueManagement>
 
     <ciManagement>
         <system>Travis CI</system>
         <url>https://travis-ci.org/nougat/</url>
     </ciManagement>
+
 
     <distributionManagement>
         <snapshotRepository>
@@ -95,17 +96,23 @@
         <maven-enforcer-plugin.version>1.4</maven-enforcer-plugin.version>
         <!-- plugin versions ]] -->
         <!-- distributionManagement [[ -->
+        <!--
+         | download:
+         |    snapshot: https://oss.sonatype.org/content/groups/public
+         |    release:  https://oss.sonatype.org/content/groups/staging
+         -->
         <dist.mgt.snap-repo.id>ossrh</dist.mgt.snap-repo.id>
         <dist.mgt.snap-repo.url>https://oss.sonatype.org/content/repositories/snapshots/</dist.mgt.snap-repo.url>
         <dist.mgt.repo.id>ossrh</dist.mgt.repo.id>
         <dist.mgt.repo.url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</dist.mgt.repo.url>
         <!-- ]] distributionManagement -->
+        <gpg.executable>C:/Program Files (x86)/GnuPG/bin/gpg.exe</gpg.executable>
     </properties>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>freework</groupId>
+                <groupId>com.github.nomou</groupId>
                 <artifactId>nougat-lang</artifactId>
                 <version>${project.version}</version>
             </dependency>

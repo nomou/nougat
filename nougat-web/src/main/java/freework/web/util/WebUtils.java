@@ -296,7 +296,7 @@ public abstract class WebUtils {
     public static String getPathWithinApplication(HttpServletRequest request) {
         String contextPath = getContextPath(request);
         String requestUri = getRequestUri(request);
-        if (StringUtils2.startsWithIgnoreCase(requestUri, contextPath)) {
+        if (StringUtils2.startsWith(requestUri, contextPath, true)) {
             // Normal case: URI contains context path.
             String path = requestUri.substring(contextPath.length());
             return (StringUtils2.hasText(path) ? path : "/");

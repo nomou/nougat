@@ -133,7 +133,7 @@ public class Barcode {
             image.getRaster().setDataElements(0, 0, w, h, pixels);
             return image;
         } catch (Exception e) {
-            return Throwables.rethrowRuntimeException(e);
+            return Throwables.unchecked(e);
         }
     }
 
