@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationHandler;
  */
 public class DefaultProxyFactory implements ProxyFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultProxyFactory.class);
+    private static final boolean BYTE_BUDDY_PRESENT = isPresent(ByteBuddyProxyFactory.ENHANCER_NAME, DefaultProxyFactory.class.getClassLoader());
     private static final boolean CGLIB_PRESENT = isPresent(CglibProxyFactory.ENHANCER_NAME, DefaultProxyFactory.class.getClassLoader());
     private static final boolean JAVASSIST_PRESENT = isPresent(JavassistProxyFactory.ENHANCER_NAME, DefaultProxyFactory.class.getClassLoader());
 
@@ -32,19 +33,26 @@ public class DefaultProxyFactory implements ProxyFactory {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("create jdk dynamic proxy, type: {}", targetClass);
             }
-            return (T) JdkDynamicProxyFactory.newProxyInstance(loader, targetClass, handler);
+            return JdkDynamicProxyFactory.newProxyInstance(loader, targetClass, handler);
+        }
+        if (BYTE_BUDDY_PRESENT) {
+            if (LOGGER.isTraceEnabled()) {
+                LOGGER.trace("create byte-buddy proxy: {}", targetClass);
+            }
+            return ByteBuddyProxyFactory.createProxy(loader, targetClass, handler, override);
+
         }
         if (JAVASSIST_PRESENT) {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("create javassist proxy: {}", targetClass);
             }
-            return (T) JavassistProxyFactory.createProxy(targetClass, handler, override);
+            return JavassistProxyFactory.createProxy(targetClass, handler, override);
         }
         if (CGLIB_PRESENT) {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace("create cglib proxy,type: {}", targetClass);
             }
-            return (T) CglibProxyFactory.createProxy(loader, targetClass, handler, override);
+            return CglibProxyFactory.createProxy(loader, targetClass, handler, override);
         }
         throw new IllegalStateException("create proxy failed, CGLIB/Javassist is not available. Add CGLIB/Javassist to your classpath.");
     }

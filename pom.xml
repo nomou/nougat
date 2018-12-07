@@ -82,9 +82,10 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <el.version>2.2.4</el.version>
+        <bytebuddy.version>1.9.5</bytebuddy.version>
+        <javassist.version>3.12.0.GA</javassist.version>
         <cglib.version>3.1</cglib.version>
         <asm.version>3.3.1</asm.version>
-        <javassist.version>3.12.0.GA</javassist.version>
         <slf4j.version>1.7.6</slf4j.version>
 
         <!-- plugin versions [[ -->
@@ -167,6 +168,18 @@
             </dependency>
             <!-- proxy lib BEGIN -->
             <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${bytebuddy.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>${javassist.version}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
                 <groupId>cglib</groupId>
                 <artifactId>cglib</artifactId>
                 <version>${cglib.version}</version>
@@ -176,12 +189,6 @@
                 <groupId>asm</groupId>
                 <artifactId>asm</artifactId>
                 <version>${asm.version}</version>
-                <optional>true</optional>
-            </dependency>
-            <dependency>
-                <groupId>javassist</groupId>
-                <artifactId>javassist</artifactId>
-                <version>${javassist.version}</version>
                 <optional>true</optional>
             </dependency>
             <!-- proxy lib END -->
