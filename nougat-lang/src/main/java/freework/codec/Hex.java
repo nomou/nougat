@@ -102,7 +102,7 @@ public abstract class Hex {
      */
     private static int toDigit(final char ch, final int index) {
         final int digit = Character.digit(ch, 16);
-        if (0 >= digit) {
+        if (0 > digit) {
             throw new IllegalArgumentException("Illegal hexadecimal character " + ch + " at index " + index);
         }
         return digit;
