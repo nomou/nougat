@@ -15,6 +15,40 @@ import java.util.concurrent.TimeUnit;
  * @author vacoor
  */
 public class DateTime extends Date {
+    /**
+     * Precision of datetime: milliseconds.
+     */
+    public static final int MILLISECONDS = 0;
+
+    /**
+     * Precision of datetime: seconds.
+     */
+    public static final int SECONDS = 1;
+
+    /**
+     * Precision of datetime: minutes.
+     */
+    public static final int MINUTES = (1 << 1) | SECONDS;
+
+    /**
+     * Precision of datetime: hours.
+     */
+    public static final int HOURS = (1 << 2) | MINUTES;
+
+    /**
+     * Precision of datetime: days.
+     */
+    public static final int DAYS = (1 << 3) | HOURS;
+
+    /**
+     * Precision of datetime: months.
+     */
+    public static final int MONTHS = (1 << 4) | DAYS;
+
+    /**
+     * Precision of datetime: years.
+     */
+    public static final int YEARS = (1 << 5) | MONTHS;
 
     /**
      * Creates a DateTime instance.
@@ -110,24 +144,42 @@ public class DateTime extends Date {
      * 1990-01-01 23:30:50.888    HOURS         1991-01-01 23:00:00.000
      * 1990-01-01 23:30:50.888    DAYS          1990-01-01 00:00:00.000
      *
-     * @param precision the time precision
+     * @param precision the time precision({@link #MILLISECONDS}, {@link #SECONDS}, {@link #MINUTES}, {@link #HOURS}, {@link #DAYS}, {@link #MONTHS}, {@link #YEARS})
      * @return the date time for given precision
      */
-    public DateTime getTimeIn(final TimeUnit precision) {
-        return getTimeIn(precision, TimeZone.getDefault());
+    public DateTime getTimeIn(final int precision) {
+        return getTimeIn(precision, null);
     }
 
     /**
      * Returns a given precision DateTime instance.
      *
-     * @param unit the time unit
-     * @param zone the time zone, used for computed at 0 o'clock every day
+     * @param precision the time precision({@link #MILLISECONDS}, {@link #SECONDS}, {@link #MINUTES}, {@link #HOURS}, {@link #DAYS}, {@link #MONTHS}, {@link #YEARS})
+     * @param zone      the time zone, used for computed at 0 o'clock every day
      * @return the date time for given precision
      */
-    public DateTime getTimeIn(final TimeUnit unit, final TimeZone zone) {
-        final TimeUnit mills = TimeUnit.MILLISECONDS;
-        final long timestamp = mills.convert(unit.convert(getTime(), mills), unit);
-        return new DateTime(!TimeUnit.DAYS.equals(unit) ? timestamp : timestamp - zone.getOffset(timestamp));
+    public DateTime getTimeIn(final int precision, final TimeZone zone) {
+        final Calendar cal = null != zone ? Calendar.getInstance(zone) : Calendar.getInstance();
+        cal.setTimeInMillis(getTime());
+        if (YEARS == (YEARS & precision)) {
+            cal.set(Calendar.MONTH, 0);
+        }
+        if (MONTHS == (MONTHS & precision)) {
+            cal.set(Calendar.DAY_OF_MONTH, 1);
+        }
+        if (DAYS == (DAYS & precision)) {
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+        }
+        if (HOURS == (HOURS & precision)) {
+            cal.set(Calendar.MINUTE, 0);
+        }
+        if (MINUTES == (MINUTES & precision)) {
+            cal.set(Calendar.SECOND, 0);
+        }
+        if (SECONDS == (SECONDS & precision)) {
+            cal.set(Calendar.MILLISECOND, 0);
+        }
+        return new DateTime(cal.getTimeInMillis());
     }
 
     /**
