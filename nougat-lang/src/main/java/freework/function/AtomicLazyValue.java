@@ -3,11 +3,12 @@ package freework.function;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 /**
- * A lazy value that may be updated atomically.
+ * A lazy compute value that may be updated atomically.
  *
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AtomicLazyValue<V> implements LazyValue<V> {
     private final AtomicMarkableReference<V> ref = new AtomicMarkableReference<V>(null, false);
 

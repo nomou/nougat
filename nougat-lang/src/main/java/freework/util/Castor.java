@@ -21,7 +21,7 @@ import java.util.Locale;
  * @author vacoor
  * @since 1.0
  */
-
+@SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule"})
 public abstract class Castor {
     private static final String DATE_FORMAT_PLAIN = "yyyy-MM-dd HH:mm:ss.SSS";
     private static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
@@ -92,20 +92,21 @@ public abstract class Castor {
         if (obj instanceof Number) {
             final NumberFormat fmt = NumberFormat.getInstance();
             fmt.setGroupingUsed(false);
-            return fmt.format((Number) obj);
+            return fmt.format(obj);
         }
         return obj.toString();
     }
 
     /**
-     * 将一个对象转换为 Boolean
-     * {@link #asString(Object)} 为
-     * true|y|yes|on|1 的对象都将返回 true
-     * false|n|no|off|0 的对象都返回 false
+     * Convert given object to Boolean.
+     * <p>
+     * return true if obj.toString is true|y|yes|on|1
+     * return false if obj.toString is false|n|no|off|0
      *
-     * @param obj
-     * @return
+     * @param obj the object
+     * @return the boolean
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static Boolean asBoolean(final Object obj) {
         if (obj instanceof Boolean) {
             return (Boolean) obj;
@@ -122,11 +123,9 @@ public abstract class Castor {
         }
 
         String value = asString(obj);
-
         if (value == null || 0 == value.length()) {
             return null;
         }
-
         if ("true".equalsIgnoreCase(value) ||
                 "t".equalsIgnoreCase(value) ||
                 "1".equalsIgnoreCase(value) ||
@@ -136,7 +135,6 @@ public abstract class Castor {
                 "on".equalsIgnoreCase(value)) {
             return Boolean.TRUE;
         }
-
         if ("false".equalsIgnoreCase(value) ||
                 "f".equalsIgnoreCase(value) ||
                 "0".equalsIgnoreCase(value) ||
@@ -146,7 +144,6 @@ public abstract class Castor {
                 "off".equalsIgnoreCase(value)) {
             return Boolean.FALSE;
         }
-
         throw newClassCastException(obj, Boolean.class);
     }
 
@@ -166,7 +163,7 @@ public abstract class Castor {
      * @param obj the object
      * @return null if object is null, otherwise converted value
      */
-    public static Short asShort(Object obj) {
+    public static Short asShort(final Object obj) {
         return asNumber(obj, Short.class);
     }
 
@@ -176,7 +173,7 @@ public abstract class Castor {
      * @param obj the object
      * @return null if object is null, otherwise converted value
      */
-    public static Integer asInt(Object obj) {
+    public static Integer asInt(final Object obj) {
         return asNumber(obj, Integer.class);
     }
 
@@ -186,7 +183,7 @@ public abstract class Castor {
      * @param obj the object
      * @return null if object is null, otherwise converted value
      */
-    public static Long asLong(Object obj) {
+    public static Long asLong(final Object obj) {
         return asNumber(obj, Long.class);
     }
 
@@ -196,7 +193,7 @@ public abstract class Castor {
      * @param obj the object
      * @return null if object is null, otherwise converted value
      */
-    public static Float asFloat(Object obj) {
+    public static Float asFloat(final Object obj) {
         return asNumber(obj, Float.class);
     }
 
@@ -228,7 +225,7 @@ public abstract class Castor {
         if (obj instanceof Boolean) {
             text = (Boolean) obj ? "1" : "0";
         } else if (obj instanceof Character) {
-            text = Integer.valueOf(((Character) obj).charValue()).toString();
+            text = Integer.valueOf((Character) obj).toString();
         } else {
             text = asString(obj);
             if (text == null || 0 == text.length()) {
@@ -268,111 +265,80 @@ public abstract class Castor {
     }
 
     /**
-     * 该方法提供类似 JavaScript 的parse* 的从10进制字符串中解析数值
-     * 两种模式: 严格和宽松
-     * <p>
-     * 宽松模式: parseNumber("12a3", false) --&gt; 12, 尽可能多的匹配数值
-     * <p>
+     * Provides javascript {@code parseFloat} functionality.
      *
-     * @param text
-     * @return
+     * <p><blockquote><pre>
+     *  parseNumber("10.1")         returning 10.1
+     *  parseNumber("-100")         returning -100
+     *  parseNumber("+100")         returning 100
+     *  parseNumber("1E2")          returning 100
+     *  parseNumber("1E-2")         returning 0.01
+     *  parseNumber("1.1E-2")       returning 0.011
+     *  parseNumber("1.1E-2abc")    returning 0.011
+     * </pre></blockquote>
+     *
+     * @param text the text to parse
+     * @return the parsed number
      */
-    public static Number parseNumber(String text) {
-        // 全部转换为大写 e --&gt; E
-        StringCharacterIterator it = new StringCharacterIterator(text.trim().toUpperCase(Locale.ENGLISH));
+    @SuppressWarnings({"PMD.UndefineMagicConstantRule", "PMD.AvoidComplexConditionRule"})
+    public static Number parseNumber(final String text) {
+        final StringCharacterIterator it = new StringCharacterIterator(text.trim().toUpperCase(Locale.ENGLISH));
+
         long number = 0;
         StringBuilder buffer = null;
         boolean negative = false;
-
-        // 提取整数循环
-        longLoop:
         while (it.getIndex() < it.getEndIndex()) {
-            char c = it.current();
-            switch (c) {
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    number *= 10;
-                    number += (c - '0');
-                    it.next();
+            final char c = it.current();
+            if ('0' <= c && '9' >= c) {
+                number *= 10;
+                number += (c - '0');
+            } else if ('-' == c || '+' == c) {
+                if (0 != number) {
                     break;
-                case '-':
-                case '+':
-                    if (0 != number) {
-                        break longLoop;
-                    }
-                    negative = '-' == c;
-                    it.next();
-                    break;
-                // double 标志
-                case '.':
-                case 'E': // 'e', 'E'
-                    buffer = new StringBuilder(16);
-                    buffer.append(negative ? '-' : "").append(number).append(c);
-                    it.next();
-                    break longLoop;
-                default:
-                    it.next();
-                    break longLoop;
+                }
+                negative = '-' == c;
+            } else if ('.' == c || 'E' == c) {
+                buffer = new StringBuilder(16);
+                buffer.append(negative ? '-' : "").append(number).append(c);
+                it.next();
+                break;
+            } else {
+                break;
             }
+            it.next();
         }
 
-        if (buffer == null) {    // 只有整数部分
-            return negative ? -1 * number : number;
+        if (buffer == null) {
+            // only the integer part.
+            return negative ? -number : number;
         }
 
-        final boolean dot = '.' == buffer.charAt(buffer.length() - 1); // '.', 'e', 'E'
-        doubleLoop:
+        final boolean dot = '.' == buffer.charAt(buffer.length() - 1);
         while (it.getIndex() < it.getEndIndex()) {
-            char ch = it.current();
-
-            switch (ch) {
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    buffer.append(ch);
-                    it.next();
-                    break;
-                case '+':
-                case '-':
+            final char c = it.current();
+            if ('0' <= c && '9' >= c) {
+                buffer.append(c);
+            } else if ('-' == c || '+' == c) {
+                if ('E' != buffer.charAt(buffer.length() - 1)) {
                     // 只允许 E 后面出现 + / -
-                    if ('E' != buffer.charAt(buffer.length() - 1)) {
-                        break doubleLoop;
-                    }
-                    buffer.append('-' == ch ? ch : "");
-                    it.next();
                     break;
-                case '.':
-                case 'E':
-                    // 如果 . 前面应出现过 . 或 E
-                    if (('.' == ch && dot) || ('E' == ch && !dot)) {
-                        // ------
-                        break doubleLoop;
-                    }
-                    buffer.append(ch);
-                    it.next();
-                default:
-                    break doubleLoop;
+                }
+                buffer.append('-' == c ? c : "");
+            } else if ('.' == c || 'E' == c) {
+                if (('.' == c && dot) || ('E' == c && !dot)) {
+                    // the fractional part cannot appear '.', 'E' cannot be repeated.
+                    break;
+                }
+                buffer.append(c);
+            } else {
+                break;
             }
+            it.next();
         }
         if ('E' == buffer.charAt(buffer.length() - 1)) {
             buffer.append('0');
         }
-        return new Double(buffer.toString());
+        return new BigDecimal(buffer.toString());
     }
 
     /**
@@ -390,7 +356,6 @@ public abstract class Castor {
         }
     }
 
-
     /**
      * Converts given object to Date.
      * <p>
@@ -406,9 +371,10 @@ public abstract class Castor {
      * <li>EEE, dd MMM yyyy HH:mm:ss zzz</li>
      * </ul>
      *
-     * @param obj the object
-     * @return
+     * @param obj the object to cast
+     * @return the date
      */
+    @SuppressWarnings({"PMD.UndefineMagicConstantRule", "PMD.MethodTooLongRule"})
     public static Date asDate(final Object obj) {
         if (null == obj || obj instanceof Date) {
             return (Date) obj;
@@ -419,80 +385,64 @@ public abstract class Castor {
 
         long timestamp = 0;
         if (obj instanceof String) {
-            String text = (String) obj;
-
+            final String text = (String) obj;
             final int len = text.length();
             if (0 == len) {
                 return null;
             }
-
-            // 优先尝试解析日期字符串
             if (-1 < text.indexOf('-')) {
                 if (len <= DATE_FORMAT_PLAIN.length() && -1 == text.indexOf('T')) {
-                    // yyyy-MM-dd HH:mm:ss.SSS,  may be missing millis or time.
+                    // yyyy-MM-dd HH:mm:ss.SSS,  may be missing milliseconds or time.
                     final char c = text.charAt(len - 3);
-                    final String finalText = ':' == c ? text + ".000" : ('-' == c ? text + " 00:00:00.000" : text);
-
+                    final String finalText = ':' == c ? (text + ".000") : ('-' == c ? text + " 00:00:00.000" : text);
                     try {
                         return new SimpleDateFormat(DATE_FORMAT_PLAIN).parse(finalText);
                     } catch (final ParseException ignore) {
-                        // ignore
-                    }
+                    }    // NOPMD
                 } else if (len <= DATE_FORMAT_ISO8601.length() && -1 < text.indexOf('T')) {
                     // yyyy-MM-dd'T'HH:mm:ss.SSS'Z'/yyyy-MM-dd'T'HH:mm:ss.SSS+0800
                     final char c = text.charAt(len - 1);
-
                     if ('Z' == c) {
-                        // Z 结尾 ISO8601, 应该是2012-12-12T00:00:00.000Z
-
-                        // 缺失毫秒, eg: 2012-12-12T00:00:00Z
+                        // ISO8601, yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
+                        String fixed = text;
                         if (':' == text.charAt(len - 4)) {
+                            // missing milliseconds, eg: 2012-12-30T00:00:00Z
                             final StringBuilder buf = new StringBuilder(text);
                             buf.insert(len - 1, ".000");
-                            text = buf.toString();
+                            fixed = buf.toString();
                         }
-
                         try {
-                            return new SimpleDateFormat(DATE_FORMAT_ISO8601_Z).parse(text);
-                        } catch (ParseException ignore) {
+                            return new SimpleDateFormat(DATE_FORMAT_ISO8601_Z).parse(fixed);
+                        } catch (final ParseException ignore) {
                         }
                     } else {
-                        // 应该为具体 TimeZone 2012-12-12T00:00:00.000+0800
+                        // 2012-12-12T00:00:00.000+0800
                         if (hasTimeZone(text)) {
-                            char ch = text.charAt(len - 3);
-
+                            final char ch = text.charAt(len - 3);
+                            final StringBuilder buffer = new StringBuilder(text);
                             if (':' == ch) {
-                                // +hh:mm 删除时区中可选的:
-                                text = new StringBuilder(text).deleteCharAt(len - 3).toString();
+                                // +hh:mm, remove optional of timezone
+                                buffer.deleteCharAt(len - 3);
                             } else if ('+' == ch || '-' == ch) {
-                                // +hh -hh 填充缺失的分钟
-                                text += "00";
+                                // +hh -hh, missing minutes
+                                buffer.append("00");
                             }
-
-                            if (Character.isDigit(text.charAt(text.length() - 9))) {
-                                // 2012-02-07T12:00:00+0800 缺失毫秒
-                                text = new StringBuilder(text).insert(text.length() - 5, ".000").toString();
+                            if (Character.isDigit(buffer.charAt(buffer.length() - 9))) {
+                                // missing milliseconds, 2012-02-07T12:00:00+0800
+                                buffer.insert(text.length() - 5, ".000");
                             }
-
                             try {
-                                return new SimpleDateFormat(DATE_FORMAT_ISO8601).parse(text);
-                            } catch (ParseException ignore) {
+                                return new SimpleDateFormat(DATE_FORMAT_ISO8601).parse(buffer.toString());
+                            } catch (final ParseException ignore) {
                             }
                         } else {
-                            // 没有时区
-                            // 2014-02-12T02:00:00
-                            StringBuilder sb = new StringBuilder(text);
-                            // 02:00:00
-                            int timeLen = len - text.lastIndexOf('T') - 1;
-                            if (timeLen <= 8) {
-                                sb.append(".000");
-                            }
-                            sb.append('Z');
-                            text = sb.toString();
-
+                            // not contains timezone, 2014-02-12T02:00:00
+                            final StringBuilder buffer = new StringBuilder(text);
+                            final int timeLen = len - text.lastIndexOf('T') - 1;
+                            buffer.append(timeLen <= 8 ? ".000Z" : "Z");
                             try {
-                                return new SimpleDateFormat(DATE_FORMAT_ISO8601_Z).parse(text);
-                            } catch (ParseException ignore) {
+                                return new SimpleDateFormat(DATE_FORMAT_ISO8601_Z).parse(buffer.toString());
+                            } catch (final ParseException ignore) {
                             }
                         }
                     }
@@ -501,34 +451,31 @@ public abstract class Castor {
                 try {
                     return new SimpleDateFormat(DATE_FORMAT_RFC1123).parse(text);
                 } catch (final ParseException ignore) {
-                    //
                 }
             }
-
-            // 尝试解析为数字
             try {
                 timestamp = Long.parseLong(text);
             } catch (final NumberFormatException ignore) {
-                // ignore.
             }
         }
-
         if (obj instanceof Number) {
             timestamp = ((Number) obj).longValue();
         }
-
         if (timestamp <= 0) {
             throw newClassCastException(obj, Date.class);
         }
-
         return new Date(timestamp);
     }
 
     /**
-     * 判断给定的日期字符串中是否包含时区
+     * Test if the given date string contains a time zone.
+     *
+     * @param date the date string
+     * @return true if the date string contains time zone
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private static boolean hasTimeZone(final String date) {
-        int len = date.length();
+        final int len = date.length();
         if (len >= 6) {
             // +hh:mm
             char c = date.charAt(len - 6);
@@ -541,7 +488,6 @@ public abstract class Castor {
             if ('+' == c || '-' == c) {
                 return true;
             }
-
             c = date.charAt(len - 3);
             if ('+' == c || '-' == c) {
                 return true;
@@ -550,8 +496,14 @@ public abstract class Castor {
         return false;
     }
 
-    private static ClassCastException newClassCastException(Object obj, Class<?> target) {
-        throw new ClassCastException((obj != null ? obj.getClass().getName() : null) + '(' + obj + ')' + " cannot be cast to " + target.getName());
+    /**
+     * Creates a ClassCastException instance.
+     *
+     * @param value  the value to cast
+     * @param target the target class
+     * @return the ClassCastException instance
+     */
+    private static ClassCastException newClassCastException(final Object value, final Class<?> target) {
+        throw new ClassCastException((value != null ? value.getClass().getName() : null) + '(' + value + ')' + " cannot be cast to " + target.getName());
     }
-
 }

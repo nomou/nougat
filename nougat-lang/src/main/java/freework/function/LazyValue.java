@@ -1,7 +1,7 @@
 package freework.function;
 
 /**
- * Lazy calculation value.
+ * Lazy compute value.
  *
  * @author vacoor
  * @since 1.0
@@ -9,7 +9,7 @@ package freework.function;
 public interface LazyValue<V> {
 
     /**
-     * Gets the lazy value.
+     * Gets the lazy compute value.
      *
      * @return the lazy value
      */

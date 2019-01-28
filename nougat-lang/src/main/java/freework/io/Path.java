@@ -6,58 +6,63 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 /**
- * 使用"/"来分隔的标准化路径工具类.
+ * Path strings use slash as the directory separator.
+ * A path string is absolute if it begins with a slash.
  *
  * @author vacoor
+ * @since 1.0
  */
+@SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class Path implements Comparable, Cloneable {
     /**
-     * 当前环境是否是 Windows.
+     * The platform whether is windows.
      */
     private static final boolean WINDOWS = System.getProperty("os.name").startsWith("Windows");
 
     /**
-     * 路径格式检测正则表达式.
+     * Pre-compiled regular expressions to detect path formats.
      */
     private static final Pattern HAS_DRIVE_LETTER_SPECIFIER = Pattern.compile("^/?[a-zA-Z]:");
 
     /**
-     * 目录分隔符.
+     * The directory separator string.
      */
     public static final String SEPARATOR = "/";
 
     /**
-     * 目录分隔符字符.
+     * The directory separator char.
      */
     public static final char SEPARATOR_CHAR = '/';
 
     /**
-     * 当前目录.
+     * The current folder path.
      */
     public static final String CUR_DIR = "./";
 
     /**
-     * 当前目录名称.
+     * The name of current folder.
      */
     public static final String CUR_DIR_NAME = ".";
 
     /**
-     * 父目录.
+     * The parent path.
      */
     public static final String PARENT_DIR = "../";
 
     /**
-     * 父目录名称.
+     * The name of parent path.
      */
     public static final String PARENT_DIR_NAME = "..";
 
     /**
-     * 内部标准化路径.
+     * The normalized path.
      */
     private String path;
 
     /**
-     * 基于给定路径字符串构建一个路径对象.
+     * Creates a path from the path string.
+     *
+     * @param pathString the path string
      */
     protected Path(final String pathString) throws IllegalArgumentException {
         if (null == pathString) {
@@ -65,22 +70,22 @@ public class Path implements Comparable, Cloneable {
         }
 
         String normalizedPathString = normalize(pathString);
-
-        // Windows 驱动器前添加 "/".
         if (hasWindowsDrive(normalizedPathString) && normalizedPathString.charAt(0) != SEPARATOR_CHAR) {
+            // insert '/' before the window drive
             normalizedPathString = SEPARATOR + normalizedPathString;
         }
 
-        // Linux 相对路径前添加 "./", (Linux 下相对路径中":"前内容会认为是schema, e.q. "a:b" will not be interpreted as scheme "a".)
         if (!WINDOWS && normalizedPathString.charAt(0) != SEPARATOR_CHAR && !CUR_DIR.equals(normalizedPathString) && !PARENT_DIR.equals(normalizedPathString)) {
+            // insert './' before the java/unix path.
             normalizedPathString = CUR_DIR + normalizedPathString;
         }
-
         this.path = normalizedPathString;
     }
 
     /**
-     * 获取当前路径对应文件的名称.
+     * Gets the name of this path.
+     *
+     * @return the name of this path
      */
     public String getName() {
         final int slash = path.lastIndexOf(SEPARATOR);
@@ -88,13 +93,13 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 获取标准化路径字符串.
+     * Gets the normalized path of this path.
      *
-     * @return 路径字符串
+     * @return the normalized path
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public String getPath() {
         String path = this.path;
-
         final StringBuilder buffer = new StringBuilder();
         if (null != path) {
             if (path.indexOf(SEPARATOR_CHAR) == 0 && hasWindowsDrive(path)) {
@@ -109,18 +114,20 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 获取当前路径的父路径.
+     * Gets the parent path of this path.
      *
-     * @return 如果当前路径是根路径返回null 否则返回父路径
+     * @return null if this path is root, otherwise the parent path
      */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
     public Path getParent() {
-        int lastSlash = path.lastIndexOf(SEPARATOR_CHAR);
-        int start = hasWindowsDrive(path) ? 3 : 0;
+        final int lastSlash = path.lastIndexOf(SEPARATOR_CHAR);
+        final int start = hasWindowsDrive(path) ? 3 : 0;
 
         // empty path or root
         if ((path.length() == start) || (lastSlash == start && path.length() == start + 1)) {
             return null;
         }
+
         String parent;
         if (lastSlash == -1) {
             parent = CUR_DIR_NAME;
@@ -132,9 +139,9 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 获取当前路径是否是绝对路径.
+     * Returns whether the path is absolute path.
      *
-     * @return 如果是绝对路径返回true, 否则返回false
+     * @return true if this path is absolute
      */
     public boolean isAbsolute() {
         final int start = hasWindowsDrive(path) ? 3 : 0;
@@ -142,18 +149,18 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 当前路径是否表示的是根路径.
+     * Returns whether the path is root.
      *
-     * @return 如果是文件系统根返回true, 否则返回false
+     * @return true if this path is root
      */
     public boolean isRoot() {
-        return getParent() == null;
+        return null == getParent();
     }
 
     /**
-     * 获取当前路径的深度.
+     * Gets the depth of this path.
      *
-     * @return 路径深度
+     * @return the depth of this path
      */
     public int depth() {
         int depth = 0;
@@ -166,20 +173,20 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 当前路径是否是以给定路径开始.
+     * Returns whether this path starts with the given path.
      *
-     * @param path 目标路径
-     * @return 如果开始于给定路径返回true, 否则返回false
+     * @param path the target path
+     * @return true if this path starts with the given path
      */
     public boolean startsWith(final Path path) {
         return startsWith(path.path);
     }
 
     /**
-     * 当前路径是否是以给定路径开始.
+     * Returns whether this path starts with the given path.
      *
-     * @param path 目标路径
-     * @return 如果开始于给定路径返回true, 否则返回false
+     * @param path the target path
+     * @return true if this path starts with the given path
      */
     public boolean startsWith(final String path) {
         final String me = normalize(this.path);
@@ -188,20 +195,20 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 当前路径是否是以给定路径结束.
+     * Returns whether this path ends with the given path.
      *
-     * @param path 目标路径
-     * @return 如果结束于给定路径返回true, 否则返回false
+     * @param path the target path
+     * @return true if this path ends with the given path
      */
     public boolean endsWith(final Path path) {
         return endsWith(path.path);
     }
 
     /**
-     * 当前路径是否是以给定路径结束.
+     * Returns whether this path ends with the given path.
      *
-     * @param path 目标路径
-     * @return 如果结束于给定路径返回true, 否则返回false
+     * @param path the target path
+     * @return true if this path ends with the given path
      */
     public boolean endsWith(final String path) {
         final String me = normalize(this.path);
@@ -210,27 +217,30 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 给当前文件添加后缀.
+     * Returns the path after appending the suffix to this path.
+     *
+     * @param suffix the suffix
+     * @return new-path
      */
     public Path suffix(final String suffix) {
         return get(getParent(), getName() + suffix);
     }
 
     /**
-     * 获取当前路径下给定子路径的路径.
+     * Gets the child path under the this path.
      *
-     * @param child 子路径
-     * @return 子路径
+     * @param child the name or relative path of this path
+     * @return the child path
      */
     public Path resolve(final String child) {
         return get(this, child);
     }
 
     /**
-     * 获取当前路径下给定后台路径的路径.
+     * Gets the child path under the this path.
      *
-     * @param children 后代路径
-     * @return 最后一个后台的路径
+     * @param children the name or relative path of this path
+     * @return the child path
      */
     public Path resolve(final String... children) {
         Path parent = new Path(this.path);
@@ -241,39 +251,39 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 获取当前路径下给定子路径的路径.
+     * Gets the child path under the this path.
      *
-     * @param child 子路径
-     * @return 子路径
+     * @param child the name or relative path of this path
+     * @return the child path
      */
     public Path resolve(final Path child) {
         return get(this, child);
     }
 
     /**
-     * 获取当前路径对基准路径的相对路径.
+     * Get the relative path of this path relative to the given path.
      *
-     * @param base 基准路径
-     * @return 相对路径
+     * @param base the base path
+     * @return the relative path
      */
     public Path relativize(final Path base) {
         return new Path(relativize(base.getPath()));
     }
 
     /**
-     * 获取当前路径对基准路径的相对路径.
+     * Gets the relative path of this path relative to the given path.
      *
-     * @param base 基准路径
-     * @return 相对路径
+     * @param base the base path
+     * @return the relative path
      */
     public String relativize(final String base) {
         return relativize(getPath(), base);
     }
 
     /**
-     * 将当前路径转换为 File 对象.
+     * Gets as java.io.File.
      *
-     * @return File
+     * @return the file
      */
     public File asFile() {
         return new File(getPath());
@@ -316,49 +326,50 @@ public class Path implements Comparable, Cloneable {
         return getPath();
     }
 
-    /* **************************************************************************************
-     *
-     * **************************************************************************************/
+
+    /* *********************************
+     *          STATIC METHODS
+     * ******************************* */
 
     /**
-     * 解析给定父路径下的子路径.
+     * Creates an path object, using the given parent and child paths.
      *
-     * @param parent 父路径
-     * @param child  子路径
-     * @return 子路径的Path对象
+     * @param parent the parent path
+     * @param child  the child path
+     * @return the child path object
      */
     public static Path get(final String parent, final String child) {
         return get(new Path(parent), new Path(child));
     }
 
     /**
-     * 解析给定父路径下的子路径.
+     * Creates an path object, using the given parent and child paths.
      *
-     * @param parent 父路径
-     * @param child  子路径
-     * @return 子路径的Path对象
+     * @param parent the parent path
+     * @param child  the child path
+     * @return the child path object
      */
     public static Path get(final Path parent, final String child) {
         return get(parent, new Path(child));
     }
 
     /**
-     * 解析给定父路径下的子路径.
+     * Creates an path object, using the given parent and child paths.
      *
-     * @param parent 父路径
-     * @param child  子路径
-     * @return 子路径的Path对象
+     * @param parent the parent path
+     * @param child  the child path
+     * @return the child path object
      */
     public static Path get(final String parent, final Path child) {
         return get(new Path(parent), child);
     }
 
     /**
-     * 解析给定父路径下的子路径.
+     * Creates an path object, using the given parent and child paths.
      *
-     * @param parent 父路径
-     * @param child  子路径
-     * @return 子路径的Path对象
+     * @param parent the parent path
+     * @param child  the child path
+     * @return the child path object
      */
     public static Path get(final Path parent, final Path child) {
         final String parentPath = parent.getPath();
@@ -367,24 +378,24 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 解析给定路径的路径对象.
+     * Creates an path object, using the given path string.
      *
-     * @param path 路径字符串
-     * @return Path对象
+     * @param path the path string
+     * @return the path object
      */
-    public static Path get(String path) {
+    public static Path get(final String path) {
         return new Path(path);
     }
 
     /**
-     * 解析给定路径下的子路径.
+     * Creates an path object, using the given parent and child paths.
      * <p>
-     * base: a/b, child: c/d, return: a/b/c/d <br/>
-     * base: a/b, child: /c/d, return: a/b/c/d <br/>
+     * base: a/b, child: c/d, return: a/b/c/d <br>
+     * base: a/b, child: /c/d, return: a/b/c/d <br>
      *
-     * @param base  基准路径
-     * @param child 子路径
-     * @return 基于基准路径解析后的子路径
+     * @param base  the parent path
+     * @param child the child path
+     * @return the child path object
      */
     public static String resolve(final String base, String child) {
         if (null == base) {
@@ -398,11 +409,11 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 获取路径于基准路径的相对路径.
+     * Gets the relative path of the path relative to the given base path.
      *
-     * @param path 待处理路径
-     * @param base 基准路径
-     * @return 路径的相对路径
+     * @param path the path
+     * @param base the base path
+     * @return the relative path
      */
     public static String relativize(final String path, final String base) {
         final String normalizedBase = normalize(base);
@@ -439,31 +450,23 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * Normalize a relative URI path that may have relative values ("/./",
-     * "/../", and so on ) it it.  <strong>WARNING</strong> - This method is
-     * useful only for normalizing application-generated paths.  It does not
-     * try to perform security checks for malicious input.
-     * Normalize operations were was happily taken from org.apache.catalina.util.RequestUtil in
-     * Tomcat trunk, r939305
+     * Normalize a path that may have relative values ("/./", "/../", and so on ) it it.
      *
-     * @param path Relative path to be normalized
+     * @param path path to be normalized
      * @return normalized path
      */
-    public static String normalize(String path) {
+    public static String normalize(final String path) {
         return normalize(path, true);
     }
 
     /**
-     * Normalize a relative URI path that may have relative values ("/./",
-     * "/../", and so on ) it it.  <strong>WARNING</strong> - This method is
-     * useful only for normalizing application-generated paths.  It does not
-     * try to perform security checks for malicious input.
+     * Normalize a path that may have relative values ("/./", "/../", and so on ) it it.
      *
-     * @param path             Relative path to be normalized
-     * @param replaceBackSlash Should '\\' be replaced with '/'
+     * @param path             path to be normalized
+     * @param replaceBackSlash true if should '\\' be replaced with '/'
      * @return normalized path
      */
-    private static String normalize(String path, boolean replaceBackSlash) {
+    private static String normalize(String path, final boolean replaceBackSlash) {
         if (path == null) {
             return null;
         }
@@ -514,7 +517,8 @@ public class Path implements Comparable, Cloneable {
                 break;
             }
             if (index == 0) {
-                return (null);  // Trying to go outside our context
+                // Trying to go outside our context
+                return (null);
             }
 
             final int index2 = normalized.lastIndexOf(SEPARATOR_CHAR, index - 1);
@@ -533,26 +537,10 @@ public class Path implements Comparable, Cloneable {
     }
 
     /**
-     * 是否是Windows系统的绝对路径.
-     * <p>
-     * 对于 Windows: C:/a/b 是绝对路径, C:a/b不是.
+     * Returns whether the given path string contains a windows drive.
      *
-     * @param pathString 需要判定的路径字符串.
-     * @param slashed    是否是以"/"开头的Windows路径.
-     * @return 如果包含驱动器则认为是绝对路径返回 true, 否则返回 false
-     */
-    public static boolean isWindowsAbsolutePath(final String pathString, final boolean slashed) {
-        final int start = (slashed ? 1 : 0);
-
-        return hasWindowsDrive(pathString) && pathString.length() >= (start + 3)
-                && ((pathString.charAt(start + 2) == SEPARATOR_CHAR) || (pathString.charAt(start + 2) == '\\'));
-    }
-
-    /**
-     * 是否包含 Windows 驱动器.
-     *
-     * @param path 待判定路径字符串
-     * @return 是否包含 Windows 驱动器
+     * @param path the path string
+     * @return true if the given path string contains a windows drive
      */
     private static boolean hasWindowsDrive(final String path) {
         return (WINDOWS && HAS_DRIVE_LETTER_SPECIFIER.matcher(path).find());

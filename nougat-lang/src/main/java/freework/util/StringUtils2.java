@@ -6,44 +6,55 @@
 package freework.util;
 
 import java.text.StringCharacterIterator;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
- * 字符串工具类
+ * Utilities of String.
  *
  * @author vacoor
+ * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class StringUtils2 {
-    public static final String NONE = "";
+    private static final String NONE = "";
+    private static final char SPACE = ' ';
+    private static final char UNDERSCORE = '_';
 
     /**
-     * 给定字符序列是否有长度
-     *
-     * @param charseq
-     * @return
+     * Non-instantiate.
      */
-    public static boolean hasLength(CharSequence charseq) {
-        return charseq != null && charseq.length() > 0;
+    private StringUtils2() {
     }
 
     /**
-     * 给定字符序列是否包含非空白字符
+     * Check that the given CharSequence is neither {@code null} nor of length 0.
+     * <br>Note: Will return {@code true} for a CharSequence that purely consists of whitespace.
      *
-     * @param charseq
-     * @return
+     * @param text the CharSequence to check (may be {@code null})
+     * @return {@code true} if the CharSequence is not null and has length
      */
-    public static boolean hasText(CharSequence charseq) {
+    public static boolean hasLength(final CharSequence text) {
+        return text != null && 0 < text.length();
+    }
+
+    /**
+     * Check whether the given CharSequence has actual text.
+     * More specifically, returns {@code true} if the string not {@code null},
+     * its length is greater than 0, and it contains at least one non-whitespace character.
+     *
+     * @param text the CharSequence to check (may be {@code null})
+     * @return {@code true} if the CharSequence is not {@code null},
+     * its length is greater than 0, and it does not contain whitespace only
+     */
+    public static boolean hasText(final CharSequence text) {
         int len;
-        if (charseq == null || (len = charseq.length()) == 0) {
+        if (text == null || (len = text.length()) == 0) {
             return false;
         }
-
         for (int i = 0; i < len; i++) {
-            if (!Character.isWhitespace(charseq.charAt(i))) {
+            if (!Character.isWhitespace(text.charAt(i))) {
                 return true;
             }
         }
@@ -51,175 +62,272 @@ public abstract class StringUtils2 {
     }
 
     /**
-     * 允许负数索引 (最后一个元素索引为 -1)
+     * Returns a new string that is a substring of this string, negative index indicate the offset of the end.
+     * (-1 indicates the index of the last character).
+     * <p>
+     * Examples:
+     * <blockquote><pre>
+     *  slice("0123456789", 0, 1)   returns "0"
+     *  slice("0123456789", 0, -1)  returns "012345678"
+     *  slice("0123456789", -2, -1) returns "8"
+     *  slice("0123456789", -2, 0)  returns "" (not throw exception)
+     *  slice("0123456789", -1, 10) returns "9"
+     * </pre></blockquote>
      *
-     * @param str
-     * @param start
-     * @param end
-     * @return
+     * @param text       the string
+     * @param beginIndex the begin index
+     * @param endIndex   the end index
+     * @return the specified substring
      */
-    public static String slice(String str, int start, int end) {
-        if (!hasLength(str)) {
-            return str;
+    public static String slice(final String text, int beginIndex, int endIndex) {
+        if (!hasLength(text)) {
+            return text;
         }
-
-        int len = str.length();
-        start = start < 0 ? start + len : start;
-        end = end < 0 ? end + len : end;
-        return start > end ? NONE : str.substring(start, end);
+        final int len = text.length();
+        beginIndex = beginIndex < 0 ? beginIndex + len : beginIndex;
+        endIndex = endIndex < 0 ? endIndex + len : endIndex;
+        return beginIndex > endIndex ? NONE : text.substring(beginIndex, endIndex);
     }
 
+    /**
+     * Returns the index within this string of the first occurrence of the specified substring.
+     *
+     * @param text       the string
+     * @param search     the substring to search for
+     * @param ignoreCase true if search should ignore case
+     * @return the index of the first occurrence of the specified substring,
+     * or -1 if there is no such occurrence.
+     */
+    public static int indexOf(final String text, final String search, final boolean ignoreCase) {
+        return indexOf(text, search, 0, ignoreCase);
+    }
 
     /**
-     * 首字母大写
+     * Returns the index within this string of the first occurrence of the specified substring, starting at the specified index.
      *
-     * @param str
-     * @return
+     * @param text       the string
+     * @param search     the substring to search for
+     * @param fromIndex  the index from which to start the search
+     * @param ignoreCase true if search should ignore case
+     * @return the index of the first occurrence of the specified substring,
+     * starting at the specified index, or -1 if there is no such occurrence.
      */
-    public static String capitalize(String str) {
-        if (!hasLength(str)) {
-            return str;
+    public static int indexOf(final String text, final String search, int fromIndex, final boolean ignoreCase) {
+        if (null == text || null == search) {
+            return -1;
         }
+        if (0 > fromIndex) {
+            fromIndex = 0;
+        }
+        final int endLimit = (text.length() - search.length()) + 1;
+        if (fromIndex > endLimit) {
+            return -1;
+        }
+        if (0 == search.length()) {
+            return fromIndex;
+        }
+        for (int i = fromIndex; i < endLimit; i++) {
+            if (text.regionMatches(ignoreCase, i, search, 0, search.length())) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
-        char[] chars = str.toCharArray();
-        chars[0] = Character.toUpperCase(chars[0]);
+    /**
+     * Tests if the text starts with the specified prefix.
+     *
+     * @param text       the text
+     * @param prefix     the prefix
+     * @param ignoreCase ignoring case if true
+     * @return true if the text starts with the specified prefix
+     */
+    public static boolean startsWith(final String text, final String prefix, final boolean ignoreCase) {
+        if (null == text || null == prefix || text.length() < prefix.length()) {
+            return false;
+        }
+        if (text.startsWith(prefix)) {
+            return true;
+        }
+        return ignoreCase && text.substring(0, prefix.length()).toLowerCase().equals(prefix.toLowerCase());
+    }
+
+    /**
+     * Tests if the text ends with the specified suffix.
+     *
+     * @param text       the text
+     * @param suffix     the suffix
+     * @param ignoreCase ignoring case if true
+     * @return true if the text ends with the specified prefix
+     */
+    public static boolean endsWith(final String text, final String suffix, final boolean ignoreCase) {
+        if (null == text || null == suffix || text.length() < suffix.length()) {
+            return false;
+        }
+        if (text.endsWith(suffix)) {
+            return true;
+        }
+        return (ignoreCase && text.substring(text.length() - suffix.length()).toLowerCase().equals(suffix.toLowerCase()));
+    }
+
+    /**
+     * Removes control characters (char &lt;= 32) from both  ends of the string.
+     *
+     * @param text the string
+     * @return the trimmed string
+     */
+    public static String trim(final String text) {
+        return text == null ? null : text.trim();
+    }
+
+    /**
+     * Removes control characters (char &lt;= 32) from the begin/end of the string.
+     *
+     * @param text the string
+     * @param left true if should remove from begin, otherwise remove from end
+     * @return the trimmed string
+     */
+    public static String trim(final String text, final boolean left) {
+        if (!hasLength(text)) {
+            return text;
+        }
+        int st = 0;
+        int len = text.length();
+        if (left) {
+            while (st < len && text.charAt(st) <= SPACE) {
+                st++;
+            }
+            return 0 < st ? text.substring(st, len) : text;
+        } else {
+            while (st < len && text.charAt(len - 1) <= SPACE) {
+                len--;
+            }
+            return len < text.length() ? text.substring(st, len) : text;
+        }
+    }
+
+    /**
+     * Removes control characters (char &lt;= 32) from both ends of the string,
+     * returning {@code null} if the String is empty ("") after the trim or if it is {@code null}.
+     *
+     * @param text the string
+     * @return the trimmed string, {@code null} if only chars &lt;= 32, empty or null string input
+     */
+    public static String trimToNull(final String text) {
+        final String trim = trim(text);
+        return !hasLength(trim) ? null : trim;
+    }
+
+    /**
+     * Removes control characters (char &lt;= 32) from both ends of this String returning an empty string (""),
+     * if the string is empty ("") after the trim or if it is {@code null}.
+     *
+     * @param text the string
+     * @return the trimmed string, or an empty string if {@code null} input
+     */
+    public static String trimToEmpty(final String text) {
+        final String trim = trim(text);
+        return trim == null ? NONE : trim;
+    }
+
+    /**
+     * Pad a String with a specified character.
+     *
+     * @param text    the string to pad out
+     * @param padChar the character to pad with
+     * @param size    the size to pad to
+     * @param leftPad true if left pad, otherwise right pad
+     * @return original string if no padding is necessary, otherwise padded string
+     */
+    public static String pad(final String text, final char padChar, int size, final boolean leftPad) {
+        final int len = text.length();
+        if (len >= size) {
+            return text;
+        }
+        final StringBuilder buff = new StringBuilder();
+        for (int i = 0; i < size - len; i++) {
+            buff.append(padChar);
+        }
+        if (leftPad) {
+            buff.append(text);
+        } else {
+            buff.insert(0, text);
+        }
+        return buff.toString();
+    }
+
+    /**
+     * Capitalizes a String changing the first letter to title case as per {@link Character#toTitleCase(char)}.
+     * No other letters are changed.
+     *
+     * @param text the string to capitalize
+     * @return the capitalized string
+     */
+    public static String capitalize(final String text) {
+        if (!hasLength(text) || Character.isTitleCase(text.charAt(0))) {
+            return text;
+        }
+        final char[] chars = text.toCharArray();
+        chars[0] = Character.toTitleCase(chars[0]);
         return new String(chars);
     }
 
     /**
-     * 取消首字母大写
-     * 如果前两个字符都是大写字母, 则不转换
+     * Uncapitalizes a String changing the first letter to title case as per {@link Character#toLowerCase(char)}.
+     * No other letters are changed.
+     *
+     * @param text the String to uncapitalize
+     * @return the uncapitalized string
      */
-    public static String uncapitalize(String str) {
-        if (!hasLength(str)) {
-            return str;
+    public static String uncapitalize(final String text) {
+        if (!hasLength(text) || Character.isLowerCase(text.charAt(0))) {
+            return text;
         }
-
-        // 如果前两个字符都是大写则不转换
-        if (str.length() > 1 && Character.isUpperCase(str.charAt(0)) && Character.isUpperCase(str.charAt(1))) {
-            return str;
+        if (text.length() > 1 && Character.isTitleCase(text.charAt(0)) && Character.isTitleCase(text.charAt(1))) {
+            return text;
         }
-
-        char[] chars = str.toCharArray();
+        final char[] chars = text.toCharArray();
         chars[0] = Character.toLowerCase(chars[0]);
         return new String(chars);
     }
 
     /**
-     * 反转大小写
+     * Converts underscore-style string into CamelCase-style.
      *
-     * @param str
-     * @return
+     * @param text               the underscore-style string
+     * @param firstCharUpperCase true if first char should uppercase
+     * @return the CamelCase-style string
      */
-    public String swapCase(String str) {
-        if (hasLength(str)) {
-            return str;
-        }
-
-        char[] chars = str.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
-            if (Character.isLowerCase(c)) {
-                chars[i] = Character.toUpperCase(c);
-            } else if (Character.isUpperCase(c)) {
-                chars[i] = Character.toLowerCase(c);
-            } else if (Character.isTitleCase(c)) {
-                chars[i] = Character.toLowerCase(c);
-            }
-        }
-        return new String(chars);
-    }
-
-
-    public static String trim(String str) {
-        return str == null ? null : str.trim();
-    }
-
-
-    /**
-     * left trim
-     *
-     * @param str
-     * @return
-     */
-    public static String ltrim(String str) {
-        if (!hasLength(str)) {
-            return str;
-        }
-
-        int st = 0;
-        final int len = str.length();
-        for (; st < len && str.charAt(st) <= ' '; st++) ;
-        return st > 0 ? str.substring(st, len) : str;
-    }
-
-    public static String rtrim(String str) {
-        if (!hasLength(str)) {
-            return str;
-        }
-
-        final int st = 0;
-        int len = str.length();
-        for (; st < len && str.charAt(len - 1) <= ' '; len--) ;
-        return len < str.length() ? str.substring(st, len) : str;
-    }
-
-    public static String pad(String str, char padChar, int total, boolean lpad) {
-        int len = str.length();
-        if (len >= total) {
-            return str;
-        }
-
-        StringBuilder buff = new StringBuilder();
-        for (int i = 0; i < total - len; i++) {
-            buff.append(padChar);
-        }
-
-        if (lpad) {
-            buff.append(str);
-        } else {
-            buff.insert(0, str);
-        }
-        return buff.toString();
-    }
-
-    public static String trimToNull(String str) {
-        final String trim = trim(str);
-        return !hasLength(trim) ? null : trim;
-    }
-
-    public static String trimToEmpty(String str) {
-        final String trim = trim(str);
-        return trim == null ? NONE : trim;
-    }
-
-
-    /**
-     * 下划线写法 --&gt; 驼峰写法
-     *
-     * @param str
-     * @param firstCharUpperCase 是否首字母大写
-     * @return
-     */
-    public static String underscoreToCamelCase(String str, boolean firstCharUpperCase) {
-        return delimitedToCamelCase(str, '_', firstCharUpperCase);
+    public static String underscoreToCamelCase(final String text, final boolean firstCharUpperCase) {
+        return delimitedToCamelCase(text, UNDERSCORE, firstCharUpperCase);
     }
 
     /**
-     * 特定分隔符 --&gt; 驼峰写法
+     * Converts CamelCase-style string into underscore-style.
      *
-     * @param str
-     * @param delimiter
-     * @param firstCharUpperCase
-     * @return
+     * @param text      the CamelCase-style string
+     * @param upperCase true if should uppercase
+     * @return the underscore-style string
      */
-    public static String delimitedToCamelCase(String str, char delimiter, boolean firstCharUpperCase) {
-        if (!hasLength(str)) {
-            return str;
-        }
+    public static String camelCaseToUnderscore(final String text, final boolean upperCase) {
+        return camelCaseToDelimited(text, UNDERSCORE, upperCase);
+    }
 
-        StringCharacterIterator it = new StringCharacterIterator(str.toLowerCase(Locale.ENGLISH));
-        StringBuilder segment = new StringBuilder(str.length());
+    /**
+     * Converts delimited-style string into CamelCase-style.
+     *
+     * @param text               the underscore-style string
+     * @param delimiter          the delimiter
+     * @param firstCharUpperCase true if first char should uppercase
+     * @return the CamelCase-style string
+     */
+    @SuppressWarnings("PMD.AvoidComplexConditionRule")
+    public static String delimitedToCamelCase(final String text, final char delimiter, final boolean firstCharUpperCase) {
+        if (!hasLength(text)) {
+            return text;
+        }
+        final StringCharacterIterator it = new StringCharacterIterator(text.toLowerCase(Locale.ENGLISH));
+        final StringBuilder segment = new StringBuilder(text.length());
         boolean undlerline = false;
         for (; it.getIndex() < it.getEndIndex(); it.next()) {
             char c = it.current();
@@ -232,207 +340,103 @@ public abstract class StringUtils2 {
                 segment.append(c);
             }
         }
-
         return segment.toString();
     }
 
     /**
-     * 驼峰写法 --&gt; 下划线写法
+     * Converts CamelCase-style string into delimited-style.
      *
-     * @param str
-     * @return
+     * @param text      the CamelCase-style string
+     * @param delimiter the delimiter
+     * @param upperCase true if should uppercase
+     * @return the delimited-style string
      */
-    public static String camelCaseToUnderscore(String str, boolean upperCase) {
-        if (!hasLength(str)) {
-            return str;
+    public static String camelCaseToDelimited(final String text, final char delimiter, final boolean upperCase) {
+        if (!hasLength(text)) {
+            return text;
         }
-
-        char[] chars = str.toCharArray();
-        StringBuilder segment = new StringBuilder();
+        final char[] chars = text.toCharArray();
+        final StringBuilder segment = new StringBuilder();
         segment.append(upperCase ? Character.toUpperCase(chars[0]) : Character.toLowerCase(chars[0]));
 
         for (int i = 1; i < chars.length; i++) {
             char c = chars[i];
-            // 大写字母后不是大写字母且不是下划线则追加
-            if (Character.isUpperCase(c) && i + 1 < chars.length && !Character.isUpperCase(chars[i + 1]) && '_' != chars[i + 1]) {
-                segment.append('_');
+            if (Character.isUpperCase(c) && i + 1 < chars.length && !Character.isUpperCase(chars[i + 1]) && delimiter != chars[i + 1]) {
+                segment.append(delimiter);
             }
             c = upperCase ? Character.toUpperCase(c) : Character.toLowerCase(c);
             segment.append(c);
         }
-
         return segment.toString();
     }
-    /*
-    public static String unqualifiedClassName(Class type) {
-        if (type.isArray()) {
-            return unqualifiedClassName(type.getComponentType())+"Array";
-        }
-        String name = type.getName();
-        return name.substring(name.lastIndexOf('.')+1);
-    }
-    */
 
-    public static String clean(String in) {
-        String out = in;
-
-        if (in != null) {
-            out = in.trim();
-            if (out.equals(NONE)) {
-                out = null;
-            }
-        }
-
-        return out;
+    /**
+     * Breaks the specified string into array.
+     *
+     * @param text       the string
+     * @param delimiters the delimiters
+     * @return the array
+     */
+    @SuppressWarnings("unchecked")
+    public static String[] tokenizeToArray(final String text, final String delimiters) {
+        final Iterable<String> it = tokenize(text, delimiters);
+        return Arrays2.create(String.class, it);
     }
 
     /**
-     * 清理字符串数组中 null / "", 始终返回一个字符串数组
+     * Breaks the specified string into iterable object using {@code StringTokenizer} default delimiters(" \t\n\r\f").
      *
-     * @param array
-     * @return
+     * @param text the string
+     * @return the iterable
      */
-    public static String[] clean(String[] array) {
-        if (array == null) {
-            return new String[0];
-        }
-        List<String> result = new ArrayList<String>(array.length);
-        for (String s : array) {
-            if (null != clean(s)) {
-                result.add(s);
-            }
-        }
-        return result.toArray(new String[result.size()]);
-    }
-
-
-    public static <T> String join(T[] array, String separator) {
-        return Arrays2.toString(array, separator);
-    }
-
-    public static boolean startsWith(String str, String prefix) {
-        return startsWith(str, prefix, false);
+    public static Iterable<String> tokenize(final String text) {
+        return tokenize(new StringTokenizer(text));
     }
 
     /**
-     * Test if the given String starts with the specified prefix,
-     * ignoring upper/lower case.
-     * <p>
-     * <p>Copied from the Spring Framework while retaining all license, copyright and author information.
+     * Breaks the specified string into iterable object.
      *
-     * @param str    the String to check
-     * @param prefix the prefix to look for
-     * @return <code>true</code> starts with the specified prefix (ignoring case), <code>false</code> if it does not.
-     * @see java.lang.String#startsWith
+     * @param text       the string
+     * @param delimiters the delimiters
+     * @return the iterable
      */
-    public static boolean startsWithIgnoreCase(String str, String prefix) {
-        return startsWith(str, prefix, true);
+    public static Iterable<String> tokenize(final String text, final String delimiters) {
+        return tokenize(new StringTokenizer(text, delimiters));
     }
 
-    public static boolean endsWith(String str, String suffix) {
-        return endsWith(str, suffix, false);
-    }
-
-    public static boolean endsWithIgnoreCase(String str, String suffix) {
-        return endsWith(str, suffix, true);
-    }
-
-    public static boolean startsWith(String str, String prefix, boolean ignoreCase) {
-        if (str == null || prefix == null || str.length() < prefix.length()) {
-            return false;
-        }
-        if (str.startsWith(prefix)) {
-            return true;
-        }
-        return ignoreCase && str.substring(0, prefix.length()).toLowerCase().equals(prefix.toLowerCase());
-    }
-
-    public static boolean endsWith(String str, String suffix, boolean ignoreCase) {
-        if (null == str || null == suffix || str.length() < suffix.length()) {
-            return false;
-        }
-        if (str.endsWith(suffix)) {
-            return true;
-        }
-        return (ignoreCase && str.substring(str.length() - suffix.length()).toLowerCase().equals(suffix.toLowerCase()));
-    }
-
-    public static int indexOfIgnoreCase(String text, String search, boolean ignoreCase) {
-        return indexOfIgnoreCase(text, search, 0, ignoreCase);
-    }
-
-    public static int indexOfIgnoreCase(String str, String searchStr, int startPos, boolean ignoreCase) {
-        if (str == null || searchStr == null) {
-            return -1;
-        }
-        if (startPos < 0) {
-            startPos = 0;
-        }
-        int endLimit = (str.length() - searchStr.length()) + 1;
-        if (startPos > endLimit) {
-            return -1;
-        }
-        if (searchStr.length() == 0) {
-            return startPos;
-        }
-        for (int i = startPos; i < endLimit; i++) {
-            if (str.regionMatches(ignoreCase, i, searchStr, 0, searchStr.length())) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    public static String[] tokenizeToStringArray(String text, String separators) {
-        Iterable<String> it = tokenize(text, separators);
-        return Arrays2.asArray(it, String.class);
-    }
-
-    public static Iterable<String> tokenize(String s) {
-        return tokenize(new StringTokenizer(s));
-    }
-
-    public static Iterable<String> tokenize(String s, String separators) {
-        final StringTokenizer tokenizer = new StringTokenizer(s, separators);
-        return new Iterable<String>() {
-            @Override
-            public Iterator<String> iterator() {
-                return new Iterator<String>() {
-                    @Override
-                    public boolean hasNext() {
-                        return tokenizer.hasMoreTokens();
-                    }
-
-                    @Override
-                    public String next() {
-                        return tokenizer.nextToken();
-                    }
-
-                    @Override
-                    public void remove() {
-                        throw new UnsupportedOperationException();
-                    }
-                };
-            }
-        };
-    }
-
+    /**
+     * Converts the tokenizer to iterable object.
+     *
+     * @param tokenizer the tokenizer
+     * @return the iterable
+     */
     public static Iterable<String> tokenize(final StringTokenizer tokenizer) {
         return new Iterable<String>() {
-
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public Iterator<String> iterator() {
                 return new Iterator<String>() {
+                    /**
+                     * {@inheritDoc}
+                     */
                     @Override
                     public boolean hasNext() {
                         return tokenizer.hasMoreTokens();
                     }
 
+                    /**
+                     * {@inheritDoc}
+                     */
                     @Override
                     public String next() {
                         return tokenizer.nextToken();
                     }
 
+                    /**
+                     * {@inheritDoc}
+                     */
                     @Override
                     public void remove() {
                         throw new UnsupportedOperationException();
@@ -440,8 +444,5 @@ public abstract class StringUtils2 {
                 };
             }
         };
-    }
-
-    private StringUtils2() {
     }
 }

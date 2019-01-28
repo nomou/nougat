@@ -57,7 +57,7 @@ public class CglibProxyFactory implements ProxyFactory {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getProxy(final ClassLoader loader, final Class<T> targetClass, final InvocationHandler handler, final boolean override) {
-        return (T) createProxy(loader, targetClass, handler, override);
+        return createProxy(loader, targetClass, handler, override);
     }
 
 
@@ -76,8 +76,9 @@ public class CglibProxyFactory implements ProxyFactory {
      * @return a proxy instance with the specified invocation handler of a proxy class that
      * is defined by the specified class loader and that extends/implements the specified superclass/interface
      */
-    public static Object createProxy(final ClassLoader loader, final Class<?> targetClass, final InvocationHandler handler, boolean override) {
-        return createProxy(loader, targetClass, handler, override, Collections.<Class<?>>emptyList(), Collections.emptyList());
+    @SuppressWarnings("unchecked")
+    public static <T> T createProxy(final ClassLoader loader, final Class<T> targetClass, final InvocationHandler handler, boolean override) {
+        return (T) createProxy(loader, targetClass, handler, override, Collections.<Class<?>>emptyList(), Collections.emptyList());
     }
 
     /**

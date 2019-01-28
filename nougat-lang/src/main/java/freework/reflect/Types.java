@@ -11,29 +11,63 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 
 /**
- * 泛型类型参数解析工具
+ * Utilities of Type.
  * <p>
- * Java 中泛型类型局部变量的泛型参数会被擦除掉,
- * 但是类级别(静态), 实例级别的变量,方法,参数以及类定义上的类型参数都不会被擦除(匿名类属于类定义)
+ * NOTE:Generic type definition will erase at compiling in java, but the class and class member is not erase.
  *
  * @author vacoor
+ * @since 1.0
  */
-@SuppressWarnings("unused")
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Types {
+    /**
+     * Non-Types array.
+     */
     private static final Type[] NONE_TYPES = new Type[0];
 
+    /**
+     * Non-instantiate.
+     */
+    private Types() {
+    }
+
+    /**
+     * Returns whether the given type is a Class object.
+     *
+     * @param type the type
+     * @return true if the type is a Class object
+     */
     public static boolean isClass(final Type type) {
         return type instanceof Class<?>;
     }
 
+    /**
+     * Returns whether the given type is a ParameterizedType object.
+     *
+     * @param type the type
+     * @return true if the type is a ParameterizedType object
+     */
     public static boolean isParameterizedType(final Type type) {
         return type instanceof ParameterizedType;
     }
 
+    /**
+     * Returns whether the given type is a TypeVariable object.
+     *
+     * @param type the type
+     * @return true if the type is a TypeVariable object
+     */
     public static boolean isTypeVariable(final Type type) {
         return type instanceof TypeVariable<?>;
     }
 
+    /**
+     * Returns the Class object if the given type is a Class object.
+     *
+     * @param type the type
+     * @param <T>  the class type
+     * @return the class object
+     */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> toClass(final Type type) {
         if (!isClass(type)) {
@@ -42,6 +76,12 @@ public abstract class Types {
         return (Class<T>) type;
     }
 
+    /**
+     * Returns the ParameterizedType object if the given type is a ParameterizedType object.
+     *
+     * @param type the type
+     * @return the ParameterizedType object
+     */
     public static ParameterizedType toParameterizedType(final Type type) {
         if (!isParameterizedType(type)) {
             throw new IllegalArgumentException("type " + type + " cannot cast to ParameterizedType");
@@ -49,6 +89,12 @@ public abstract class Types {
         return (ParameterizedType) type;
     }
 
+    /**
+     * Returns the TypeVariable object if the given type is a TypeVariable object.
+     *
+     * @param type the type
+     * @return the TypeVariable object
+     */
     @SuppressWarnings("unchecked")
     public static <D extends GenericDeclaration> TypeVariable<D> toTypeVariable(final Type type) {
         if (!isTypeVariable(type)) {
@@ -58,10 +104,10 @@ public abstract class Types {
     }
 
     /**
-     * 获取 Array, Iterable 解析泛型类型参数后的元素类型, 无法解析或其他类型返回null
+     * Gets the component type of the array/java.util.Iterable type.
      *
-     * @param type 需要解析的 Iterable, Array 类型
-     * @return
+     * @param type the array/java.util.Iterable type
+     * @return the component type if resolved, otherwise null
      */
     @SuppressWarnings("unchecked")
     public static Type resolveComponentType(final Type type) {
@@ -88,12 +134,11 @@ public abstract class Types {
     }
 
     /**
-     * 获取 type 在 TypeReference 引用的上下文中解析类型参数后的类型
-     * <p>
-     * //     * @param contextTypeRef 泛型类型解析上下文类型引用
-     * //     * @param type           需要泛型类型参数的类型
+     * Gets the actual parameterized type of the generic class definition in context.
      *
-     * @return
+     * @param definition the generic class definition
+     * @param contextRef the context reference
+     * @return the actual paramerized type
      */
     public static <T> Type[] resolveActualTypeArgs(final Class<T> definition, final TypeReference<? extends T> contextRef) {
         final Type type = contextRef.getType();
@@ -116,22 +161,24 @@ public abstract class Types {
 
 
     /**
-     * 获取泛型超类在给定子类上下文的实际类型参数
+     * Gets the actual parameterized type of the generic class definition in context.
      * <p>
+     * <code>
      * <pre>
      *     class A&lt;V&gt; {}
      *     class B&lt;K,V&gt; extends A&lt;V&gt; {}
      *     class C extends B&lt;String, Integer&gt; {}
      *
      *     resolveActualTypeArgs(B.class, B.class.getTypeParameters(), A.class)  --&gt; V
-     *     (注: 这个V定义类为B.class, 和通过A的 ParameterizedType#getActualTypeArguments() 获取到的 V 定义类为A.class, 是不同的 equals = false)
      *     resolveActualTypeArgs(C.class, C.class.getTypeParameters(), A.class)  --&gt; Integer
      *     resolveActualTypeArgs(C.class, C.class.getTypeParameters(), A.class)  --&gt; Integer
      * </pre>
+     * </code>
      *
-     * @param definition 泛型超类/接口
-     * @param context    解析上下文原始类型
-     * @param typeArgs   解析上下文实际类型参数
+     * @param definition the generic class definition
+     * @param context    the context reference
+     * @param typeArgs   the context type variable
+     * @return the actual paramerized type
      */
     @SuppressWarnings("unchecked")
     public static <T> Type[] resolveActualTypeArgs(final Class<T> definition, final Class<? extends T> context, final Type... typeArgs) {
@@ -182,6 +229,9 @@ public abstract class Types {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * TODO javadocs.
+     */
     private static <S> Type lookupSuper(final Class<? extends S> context, final Class<S> definition) {
         /* context is an interface or interface implementation, the superclass must be an interface. */
         final Type superType = context.getGenericSuperclass();
@@ -202,10 +252,14 @@ public abstract class Types {
         return target;
     }
 
-    private static boolean isInterfaceOrClass(Class<?> clazz) {
+    /**
+     * Returns whether the given class is a class or interface(not annotation/array/enum/primitive).
+     *
+     * @param clazz the class
+     * @return true if class is not annotation/array/enum/primitive, otherwise false
+     */
+    private static boolean isInterfaceOrClass(final Class<?> clazz) {
         return !(clazz.isAnnotation() || clazz.isArray() || clazz.isEnum() || clazz.isPrimitive());
     }
 
-    private Types() {
-    }
 }

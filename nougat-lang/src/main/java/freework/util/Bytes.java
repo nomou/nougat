@@ -8,11 +8,15 @@ package freework.util;
 import java.nio.charset.Charset;
 
 /**
- * Byte array utils.
+ * Utilities of byte.
  *
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings({
+        "PMD.UndefineMagicConstantRule",
+        "PMD.AbstractClassShouldStartWithAbstractNamingRule"
+})
 public abstract class Bytes {
     /**
      * UTF-8 charset.

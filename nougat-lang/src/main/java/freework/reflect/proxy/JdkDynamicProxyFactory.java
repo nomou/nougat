@@ -17,7 +17,7 @@ public class JdkDynamicProxyFactory implements ProxyFactory {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getProxy(final ClassLoader loader, final Class<T> targetClass, final InvocationHandler handler, final boolean override) {
-        return (T) newProxyInstance(loader, targetClass, handler);
+        return newProxyInstance(loader, targetClass, handler);
     }
 
     /**
@@ -30,7 +30,8 @@ public class JdkDynamicProxyFactory implements ProxyFactory {
      * @return a proxy instance with the specified invocation handler of a proxy class that
      * is defined by the specified class loader and that implements the specified interface
      */
-    public static Object newProxyInstance(final ClassLoader loader, final Class<?> targetClass, final InvocationHandler handler) {
-        return Proxy.newProxyInstance(loader, new Class<?>[]{targetClass}, handler);
+    @SuppressWarnings("unchecked")
+    public static <T> T newProxyInstance(final ClassLoader loader, final Class<T> targetClass, final InvocationHandler handler) {
+        return (T) Proxy.newProxyInstance(loader, new Class<?>[]{targetClass}, handler);
     }
 }

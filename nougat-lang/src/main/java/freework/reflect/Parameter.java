@@ -15,8 +15,7 @@ import java.util.Map;
 
 /**
  * Represents a method parameter.
- * <p>
- * <pre>
+ * <p><pre>
  *     Parameter.lookup(method)[0].isCompatible(Object.class);
  * </pre>
  *

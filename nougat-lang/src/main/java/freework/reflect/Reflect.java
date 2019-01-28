@@ -2,21 +2,13 @@ package freework.reflect;
 
 import freework.util.Primitives;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.UndeclaredThrowableException;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Reflection utils.
+ * Utilities of reflection.
  *
  * @author vacoor
  * @since 1.0
@@ -291,6 +283,7 @@ public class Reflect {
     /**
      * Gets the field of wrapped object.
      *
+     * @param the name of field
      * @return the reflect for field
      */
     public Reflect field(final String field) {
@@ -605,6 +598,17 @@ public class Reflect {
         return declaredTypes;
     }
 
+    /**
+     * Compares matching degree of the constructor/method parameter types.
+     *
+     * @param memberA       the member a (nullable)
+     * @param typesA        the parameter types of member a
+     * @param memberB       the member b (not null)
+     * @param typesB        the parameter types of member b
+     * @param argumentTypes the arguments types for matching
+     * @param <T>           the member type
+     * @return 1 if best match is member b, -1 if best match is member a, otherwise 0
+     */
     private static <T extends Member> int matchesCompare(final T memberA, final Class<?>[] typesA,
                                                          final T memberB, final Class<?>[] typesB,
                                                          final Class<?>[] argumentTypes) {
@@ -645,6 +649,12 @@ public class Reflect {
         return -1;
     }
 
+    /**
+     * Returns whether the given member contains var-args.
+     *
+     * @param member the member
+     * @return true if contains var-args
+     */
     private static boolean isVarArgs(final Member member) {
         if (member instanceof Constructor<?>) {
             return ((Constructor<?>) member).isVarArgs();
@@ -657,7 +667,7 @@ public class Reflect {
 
 
     /**
-     * Whether the declared types is compatible with the value of the given types.
+     * Returns whether the declared types is compatible with the value of the given types.
      *
      * @param declaredTypes the declared types
      * @param actualTypes   the actual types
@@ -677,7 +687,7 @@ public class Reflect {
     }
 
     /**
-     * Whether the declared type is compatible with the value of the given type.
+     * Returns whether the declared type is compatible with the value of the given type.
      *
      * @param declaredType the declared type
      * @param actualType   the actual type
@@ -843,11 +853,14 @@ public class Reflect {
 
     /**
      * Returns the class this method was called 'framesToSkip' frames up the caller hierarchy.
-     * <p>
-     * NOTE:
+     * <p>NOTE:
      * <b>Extremely expensive!
      * Please consider not using it.
      * These aren't the droids you're looking for!</b>
+     *
+     * @param framesToSkip TODO
+     * @param <T>          the class
+     * @return TODO
      */
     @SuppressWarnings("unchecked")
     public static <T> Class<T> findCallerClass(final int framesToSkip) {
@@ -861,7 +874,7 @@ public class Reflect {
     }
 
     /**
-     * TODO DOCME.
+     * TODO javadocs.
      *
      * @return complete me!
      */
@@ -870,7 +883,7 @@ public class Reflect {
     }
 
     /**
-     * TODO DOCME.
+     * TODO javadocs.
      *
      * @param skipSystemClass if true skip system class
      * @return complete me
@@ -891,7 +904,7 @@ public class Reflect {
     }
 
     /**
-     * 获取调用栈信息.
+     * TODO javadocs.
      *
      * @param framesToSkip 跳过的frame层数, 当framesToSkip=0则获取调用该方法的调用者堆栈
      * @return 堆栈信息

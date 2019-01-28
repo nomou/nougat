@@ -27,6 +27,7 @@ import java.lang.reflect.TypeVariable;
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class TypeReference<T> {
     protected final Type type;
 
@@ -54,6 +55,8 @@ public abstract class TypeReference<T> {
 
     /**
      * Gets underlying {@code Type} instance.
+     *
+     * @return the underlying type
      */
     public final Type getType() {
         return type;

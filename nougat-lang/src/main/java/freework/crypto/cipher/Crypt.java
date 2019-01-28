@@ -3,35 +3,13 @@ package freework.crypto.cipher;
 import freework.codec.Base64;
 import freework.util.Bytes;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.*;
+import java.security.spec.*;
 import java.util.Arrays;
 
 /**
@@ -40,6 +18,7 @@ import java.util.Arrays;
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Crypt {
 
     /**
@@ -174,7 +153,7 @@ public abstract class Crypt {
             }
         } catch (final NoSuchPaddingException e) {
             throw new IllegalStateException(e);
-        } catch (NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         } catch (final InvalidAlgorithmParameterException e) {
             throw new IllegalStateException(e);
@@ -621,6 +600,7 @@ public abstract class Crypt {
      * @param encodedPrivateKey encoded private key
      * @return the asymmetric key pair
      */
+    @SuppressWarnings("PMD.UndefineMagicConstantRule")
     public static KeyPair newAsymmetricKey(final String transformation, final byte[] encodedPublicKey, final byte[] encodedPrivateKey) {
         PublicKey publicKey = null;
         PrivateKey privateKey = null;

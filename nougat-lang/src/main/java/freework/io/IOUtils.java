@@ -12,11 +12,15 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 
 /**
- * I/O stream utils.
+ * Utilities of I/O stream.
  *
  * @author vacoor
  * @since 1.0
  */
+@SuppressWarnings({
+        "PMD.ClassNamingShouldBeCamelRule",
+        "PMD.AbstractClassShouldStartWithAbstractNamingRule"
+})
 public abstract class IOUtils {
     public static final int END_OF_INPUT = -1;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
@@ -31,8 +35,10 @@ public abstract class IOUtils {
     /**
      * Reads the contents of an input stream and write to a output stream.
      *
-     * @param in  the input stream
-     * @param out the output stream
+     * @param in       the input stream
+     * @param out      the output stream
+     * @param closeIn  close the input stream
+     * @param closeOut close the output stream
      * @return the number of bytes read
      * @throws IOException if an I/O error occurs
      */
@@ -140,6 +146,7 @@ public abstract class IOUtils {
      *
      * @param rbc      the read channel
      * @param wbc      the write channel
+     * @param buffer   the buffer
      * @param closeIn  close the read channel
      * @param closeOut close the write channel
      * @return the number of bytes read
@@ -173,7 +180,7 @@ public abstract class IOUtils {
      * @param buffer  the destination
      * @param offset  initial offset into buffer
      * @param closeIn close the input stream
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
      */
     public static void readFully(final InputStream in, final byte[] buffer,
                                  final int offset, final boolean closeIn) throws IOException {
@@ -193,7 +200,7 @@ public abstract class IOUtils {
      * @param length  expected length of bytes read
      * @param closeIn close the input stream
      * @return actual length of bytes read
-     * @throws IOException
+     * @throws IOException if an I/O error occurs
      */
     public static int read(final InputStream in, final byte[] buffer,
                            final int offset, final int length, boolean closeIn) throws IOException {

@@ -7,8 +7,6 @@ package freework.reflect.proxy;
 
 import javassist.util.proxy.MethodHandler;
 import javassist.util.proxy.ProxyObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -39,7 +37,7 @@ public final class JavassistProxyFactory implements ProxyFactory {
     @Override
     @SuppressWarnings("unchecked")
     public <T> T getProxy(final ClassLoader loader, final Class<T> targetClass, final InvocationHandler handler, final boolean override) {
-        return (T) createProxy(targetClass, handler, override);
+        return createProxy(targetClass, handler, override);
     }
 
     /**
@@ -52,8 +50,9 @@ public final class JavassistProxyFactory implements ProxyFactory {
      * @return a proxy instance with the specified invocation handler of a proxy class that
      * is defined by the specified class loader and that extends/implements the specified superclass/interface
      */
-    public static Object createProxy(final Class<?> targetClass, final InvocationHandler h, final boolean override) {
-        return createProxy(targetClass, h, override, Collections.<Class<?>>emptyList(), Collections.emptyList());
+    @SuppressWarnings("unchecked")
+    public static <T> T createProxy(final Class<T> targetClass, final InvocationHandler h, final boolean override) {
+        return (T) createProxy(targetClass, h, override, Collections.<Class<?>>emptyList(), Collections.emptyList());
     }
 
     /**
@@ -132,6 +131,7 @@ public final class JavassistProxyFactory implements ProxyFactory {
         }
 
         @Override
+        @SuppressWarnings("PMD.RemoveCommentedCodeRule")
         public Object invoke(final Object proxy, final Method method, final Method methodProxy, final Object[] args) throws Throwable {
             if (!Modifier.isAbstract(method.getModifiers()) && !override) {
                 /*-

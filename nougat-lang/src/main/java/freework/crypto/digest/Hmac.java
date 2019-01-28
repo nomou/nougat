@@ -27,12 +27,13 @@ import java.security.NoSuchAlgorithmException;
  * @author vacoor
  * @since 1.0
  */
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule"})
 public class Hmac {
 
     /**
      * HMAC algorithm.
      */
+    @SuppressWarnings("PMD.EnumConstantsMustHaveCommentRule")
     public enum Algorithm {
         HMAC_MD5("HmacMD5"), HMAC_SHA1("HmacSHA1"), HMAC_SHA256("HmacSHA256"), HMAC_SHA384("HmacSHA384"), HMAC_SHA512("HmacSHA512");
 
