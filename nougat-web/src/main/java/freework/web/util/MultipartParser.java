@@ -12,11 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Multipart 请求工具类.
@@ -24,8 +20,8 @@ import java.util.Set;
  * @author vacoor
  * @since 1.0
  */
-public abstract class Multipart {
-    private static final Logger LOG = LoggerFactory.getLogger(Multipart.class);
+public abstract class MultipartParser {
+    private static final Logger LOG = LoggerFactory.getLogger(MultipartParser.class);
 
     protected static final String DEFAULT_CHARACTER_ENCODING = "ISO-8859-1";
     protected static final String CONTENT_TYPE = "Content-Type";
@@ -476,6 +472,6 @@ public abstract class Multipart {
         }
     }
 
-    private Multipart() {
+    private MultipartParser() {
     }
 }
