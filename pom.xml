@@ -278,7 +278,10 @@
                     <charset>UTF-8</charset>
                     <encoding>UTF-8</encoding>
                     <docencoding>UTF-8</docencoding>
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <doclint>none</doclint>
+                    <failOnWarnings>false</failOnWarnings>
+                    <failOnError>false</failOnError>
+                    <!--<additionalparam>-Xdoclint:none</additionalparam>-->
                 </configuration>
             </plugin>
             <!-- ]] java source & javadoc plugin -->
@@ -452,6 +455,12 @@
                 <checkstyle.skip>true</checkstyle.skip>
                 <findbugs.skip>true</findbugs.skip>
                 <cobertura.skip>true</cobertura.skip>
+            </properties>
+        </profile>
+        <profile>
+            <id>osx</id>
+            <properties>
+                <gpg.executable>gpg</gpg.executable>
             </properties>
         </profile>
     </profiles>
