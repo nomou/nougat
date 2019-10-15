@@ -95,11 +95,14 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <el.version>2.2.4</el.version>
+        <commons.lang3.version>3.3.2</commons.lang3.version>
         <bytebuddy.version>1.9.5</bytebuddy.version>
         <javassist.version>3.12.0.GA</javassist.version>
         <cglib.version>3.1</cglib.version>
         <asm.version>3.3.1</asm.version>
         <slf4j.version>1.7.6</slf4j.version>
+        <antisamy.version>1.5.3</antisamy.version>
+        <spring.version>4.1.4.RELEASE</spring.version>
 
         <!-- plugin versions [[ -->
         <checkstyle.version>6.7</checkstyle.version>
@@ -131,6 +134,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.github.nomou</groupId>
+                <artifactId>nougat-web-lang</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.9</version>
@@ -155,6 +163,12 @@
                 <optional>true</optional>
             </dependency>
             <!-- logging END -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons.lang3.version}</version>
+                <optional>true</optional>
+            </dependency>
             <!-- javax el api BEGIN -->
             <dependency>
                 <groupId>javax.el</groupId>
@@ -169,6 +183,18 @@
                 <optional>true</optional>
             </dependency>
             <!-- javax el api END -->
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>3.1.0</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.owasp.antisamy</groupId>
+                <artifactId>antisamy</artifactId>
+                <version>${antisamy.version}</version>
+                <optional>true</optional>
+            </dependency>
             <dependency>
                 <groupId>javax.json</groupId>
                 <artifactId>javax.json-api</artifactId>
@@ -205,6 +231,13 @@
                 <optional>true</optional>
             </dependency>
             <!-- proxy lib END -->
+
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <version>${spring.version}</version>
+                <artifactId>spring-web</artifactId>
+                <optional>true</optional>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -3,63 +3,47 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <artifactId>nougat-web</artifactId>
         <groupId>com.github.nomou</groupId>
-        <artifactId>nougat</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>nougat-proc</artifactId>
+    <artifactId>nougat-web-lang</artifactId>
 
-    <properties>
-        <!-- 4.1 must jdk 1.7, 4.0 jdk 1.6 但是总报错 -->
-        <jna.version>3.4.0</jna.version>
-        <winp.version>1.19</winp.version>
-    </properties>
+    <name>nougat-web-lang</name>
+    <description>Web util</description>
 
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
-
         <dependency>
             <groupId>com.github.nomou</groupId>
             <artifactId>nougat-lang</artifactId>
+            <optional>true</optional>
         </dependency>
-
-        <!-- logging BEGIN -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- logging END -->
-
-
-        <!-- JNA begin -->
         <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>${jna.version}</version>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <optional>true</optional>
         </dependency>
-        <!-- 4.0 之前 platform -->
         <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>platform</artifactId>
-            <version>${jna.version}</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <optional>true</optional>
         </dependency>
-        <!-- JNA end -->
-
         <dependency>
-            <groupId>org.jvnet.winp</groupId>
-            <artifactId>winp</artifactId>
-            <version>${winp.version}</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>

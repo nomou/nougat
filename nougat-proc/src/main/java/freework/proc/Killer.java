@@ -2,6 +2,7 @@ package freework.proc;
 
 import com.sun.jna.Platform;
 import com.sun.jna.platform.win32.WinNT;
+import freework.proc.jna.CLibrary;
 
 import static freework.proc.jna.CLibrary.LIBC;
 import static freework.proc.jna.Kernel32.KERNEL32;
@@ -13,18 +14,15 @@ import static freework.proc.jna.Kernel32.KERNEL32;
  * @since 1.0
  */
 public abstract class Killer {
+    private static final boolean IS_WINDOWS = Platform.isWindows();
 
     /**
      * 安静的终止给定Windows/Unix进程.
      *
      * @param pid 进程ID
      */
-    public static void killQuiet(final int pid) {
-        if (Platform.isWindows()) {
-            killOnWindows(pid, -1);
-        } else {
-            killOnUnix(pid, -9);
-        }
+    public static boolean killQuiet(final int pid) {
+        return IS_WINDOWS ? killOnWindows(pid, -1) : killOnUnix(pid, CLibrary.SIGKILL);
     }
 
     /**
@@ -34,8 +32,8 @@ public abstract class Killer {
      * @return 是否成功终止进程
      */
     public static boolean killOnWindows(final int pid, final int exitCode) {
-        if (!Platform.isWindows()) {
-            throw new UnsupportedOperationException("This operation not support at non-windows platforms");
+        if (!IS_WINDOWS) {
+            throw new UnsupportedOperationException("this operation not support at non-windows platforms");
         }
         /* 根据 PID 获取进程句柄. */
         final WinNT.HANDLE handle = KERNEL32.OpenProcess(WinNT.PROCESS_TERMINATE, false, pid);
@@ -49,13 +47,16 @@ public abstract class Killer {
      * @param sig Kill 信号量
      * @return exit code
      */
-    public static int killOnUnix(final int pid, final int sig) {
-        if (Platform.isWindows()) {
-            throw new UnsupportedOperationException("This operation is not supported on the windows platform");
+    public static boolean killOnUnix(final int pid, final int sig) {
+        if (IS_WINDOWS) {
+            throw new UnsupportedOperationException("this operation is not supported on the windows platform");
         }
-        return LIBC.kill(pid, sig);
+        return 0 == LIBC.kill(pid, sig);
     }
 
+    /**
+     * Non-instantiate.
+     */
     private Killer() {
     }
 }

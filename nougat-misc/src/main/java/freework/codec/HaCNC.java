@@ -2,7 +2,7 @@ package freework.codec;
 
 
 /**
- * 河南联通宽带帐号加密算法 (最下面附有js版本)
+ * 河南联通宽带帐号加密算法.
  *
  * @author vacoor
  */

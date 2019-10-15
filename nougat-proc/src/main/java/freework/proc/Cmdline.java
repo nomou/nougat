@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 import static com.sun.jna.Pointer.NULL;
 import static java.util.logging.Level.FINEST;
 
-//import com.sun.akuma.Daemon;
-
 /**
  * List of arguments for Java VM and application.
  *
@@ -396,6 +394,7 @@ public class Cmdline extends ArrayList<String> {
          */
         return args;
     }
+
     /**
      * Seek to the specified position. This method handles offset bigger than {@link Long#MAX_VALUE} correctly.
      *

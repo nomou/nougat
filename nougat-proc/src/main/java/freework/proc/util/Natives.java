@@ -5,9 +5,11 @@ import com.sun.jna.Platform;
 import java.io.File;
 
 /**
- * Created by vacoor on 2018/11/25.
+ * 未完成.
+ *
+ * @author vacoor
  */
-public class Natives {
+class Natives {
     public static final String OS_VERSION = System.getProperty("os.version").toLowerCase();
 
     public static final String MACOSX = "macosx";

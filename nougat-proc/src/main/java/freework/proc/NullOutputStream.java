@@ -1,28 +1,29 @@
 package freework.proc;
 
-import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * This OutputStream writes all data to the famous <b>/dev/null</b>.
- * <p>
- * This output stream has no destination (file/socket etc.) and all
- * bytes written to it are ignored and lost.
+ * 类似 /dev/null 的输出流.
  */
 public class NullOutputStream extends OutputStream {
-
     /**
-     * A singleton.
+     * 单例.
      */
     public static final NullOutputStream INSTANCE = new NullOutputStream();
 
     /**
-     * Does mux - output to <code>/dev/null</code>.
+     * Non-instantiate.
+     */
+    private NullOutputStream() {
+    }
+
+    /**
+     * 什么也不做, 相当于输出到 /dev/null.
      *
-     * @param b The byte to write
+     * @param b 要写入的字节
      */
     @Override
-    public void write(int b) {
+    public void write(final int b) {
         //to /dev/null
     }
 

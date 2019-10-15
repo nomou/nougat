@@ -19,8 +19,24 @@ import static freework.proc.jna.Kernel32.KERNEL32;
  * @since 1.0
  */
 public abstract class ProcessUtils {
+    /**
+     * 是否Windows平台.
+     */
+    private static final boolean IS_WINDOWS = Platform.isWindows();
+
+    /**
+     * Windows平台实现.
+     */
     private static final String WIN32_PROCESS_CLASS = "java.lang.Win32Process";
+
+    /**
+     * Windows平台实现.
+     */
     private static final String WINDOWS_PROCESS_CLASS = "java.lang.ProcessImpl";
+
+    /**
+     * Unix平台实现.
+     */
     private static final String UNIX_PROCESS_CLASS = "java.lang.UNIXProcess";
 
     /**
@@ -30,26 +46,40 @@ public abstract class ProcessUtils {
      * @return 进程ID
      */
     public static int getPid(final Process proc) {
-        return Platform.isWindows() ? getPidOnWindows(proc) : getPidOnWindows(proc);
+        return IS_WINDOWS ? getPidOnWindows(proc) : getPidOnUnix(proc);
     }
 
+    /**
+     * 获取给定进程ID的命令行参数.
+     *
+     * @param pid 进程ID
+     * @return 进程命令行
+     * @throws IOException 发生IO错误时抛出异常
+     */
     public static Cmdline getCmdline(final int pid) throws IOException {
         return Cmdline.resolve(pid);
     }
 
+    /**
+     * 获取给定进程ID的命令行参数.
+     *
+     * @param proc 进程
+     * @return 进程命令行
+     * @throws IOException 发生IO错误时抛出异常
+     */
     public static Cmdline getCmdline(final Process proc) throws IOException {
         return getCmdline(getPid(proc));
     }
 
     /**
-     * 获取当前JVM PID.
+     * 获取当前JVM进程ID.
      *
      * @return 当前JVM进程ID
      */
     public static int getJvmPid() {
         int jvmPid = -1;
         try {
-            if (Platform.isWindows()) {
+            if (IS_WINDOWS) {
                 jvmPid = KERNEL32.GetCurrentProcessId();
             } else {
                 jvmPid = CLibrary.LIBC.getpid();
@@ -162,10 +192,5 @@ public abstract class ProcessUtils {
         } catch (final NoSuchFieldException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    public static void main(String[] args) {
-        int jvmPid = ProcessUtils.getJvmPid();
-        System.out.println(jvmPid);
     }
 }

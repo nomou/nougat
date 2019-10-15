@@ -4,14 +4,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 /**
- * 执行进程任务
+ * 进程任务.
  *
  * @author vacoor
  */
-public abstract class ProcessTask extends FutureTask<ProcessStarter.Feedback> {
+public abstract class ProcessTask extends FutureTask<Integer> {
     private final ProcessStarter starter;
 
-    protected ProcessTask(ProcessStarter starter, Callable<ProcessStarter.Feedback> callable) {
+    protected ProcessTask(final ProcessStarter starter, Callable<Integer> callable) {
         super(callable);
         this.starter = starter;
     }
@@ -27,8 +27,8 @@ public abstract class ProcessTask extends FutureTask<ProcessStarter.Feedback> {
      * 取消当前进程任务
      */
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        Process process = getProcess();
+    public boolean cancel(final boolean mayInterruptIfRunning) {
+        final Process process = getProcess();
         if (null != process && !isDone()) {
             process.destroy();
         }
@@ -36,14 +36,14 @@ public abstract class ProcessTask extends FutureTask<ProcessStarter.Feedback> {
     }
 
     /**
-     * 拷贝当前进程任务作为一个新任务
+     * 拷贝当前进程任务作为一个新任务.
      */
     public ProcessTask copyAsNew() {
         return starter.newTask(getCommand(), getArguments());
     }
 
     /**
-     * 获取当前进程任务创建时指定的命令
+     * 获取当前进程任务创建时指定的命令.
      */
     public abstract String[] getCommand();
 
@@ -53,7 +53,7 @@ public abstract class ProcessTask extends FutureTask<ProcessStarter.Feedback> {
     public abstract String[] getArguments();
 
     /**
-     * 获取当前进程任务中正在执行的进程
+     * 获取当前进程任务中正在执行的进程.
      *
      * @return 如果任务已经执行则返回正在执行的进程，否则返回 null
      */

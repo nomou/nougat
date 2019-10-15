@@ -21,10 +21,23 @@ import static freework.proc.jna.CLibrary.LIBC;
 import static freework.proc.jna.Kernel32.KERNEL32;
 import static freework.proc.jna.Shell32.SHELL32;
 
-public class Restarter {
+/**
+ * 未完成.
+ */
+class Restarter {
+    /**
+     * 是否是Windows平台.
+     */
     private static final boolean IS_WINDOWS = Platform.isWindows();
+
+    /**
+     * 是否是Mac平台.
+     */
     private static final boolean IS_MAC = Platform.isMac();
 
+    /**
+     * Non-instantiate.
+     */
     private Restarter() {
     }
 
@@ -48,11 +61,12 @@ public class Restarter {
      * @return
      */
     private static int getRestartCode() {
-        String s = System.getProperty("wdb.restart.code");
-        if (s != null) {
+        String code = System.getProperty("wdb.restart.code");
+        if (null != code) {
             try {
-                return Integer.parseInt(s);
+                return Integer.parseInt(code);
             } catch (NumberFormatException ignore) {
+                // ignore
             }
         }
         return 0;

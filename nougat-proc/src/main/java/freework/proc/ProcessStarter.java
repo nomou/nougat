@@ -10,45 +10,45 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 
 /**
- * 进程启动器
+ * 进程启动器.
  *
  * @author vacoor
  */
 public class ProcessStarter {
     private static final Logger LOG = LoggerFactory.getLogger(ProcessStarter.class);
 
-    public interface Feedback {
-
-        int getExitCode();
-
-    }
-
     /**
-     * 进程执行命令
+     * 进程执行命令.
      */
     private final String[] command;
 
-    public ProcessStarter(String... command) {
+    /**
+     * 创建一个 ProcessStarter.
+     *
+     * @param command 启动命令
+     */
+    public ProcessStarter(final String... command) {
         this.command = command;
     }
 
     /**
-     * 在当前线程,使用给定的参数来启动一个当前命令的新进程, 并等待结束
+     * 在当前线程, 使用给定的参数来为当前命令启动新进程, 并等待结束.
      *
      * @param args 启动的进程命令参数
      * @return 进程的退出值, 如果被终止返回 -1
-     * @throws IOException
-     * @throws InterruptedException
+     * @throws IOException          发生IO错误抛出此异常
+     * @throws InterruptedException 如果被进程打断抛出此异常
      */
-    public int execute(String... args) throws IOException, InterruptedException {
+    public int execute(final String... args) throws IOException, InterruptedException {
         int exitCode = -1;
-        String[] cmd = merge(this.command, args);
+        final String[] cmd = merge(this.command, args);
         try {
-            ProcessHandler procHandler = newHandler();
-            Process process = startProcess(cmd);
-            exitCode = waitForProcess(process, procHandler);
-            if (null != procHandler) {
-                procHandler.finished(cmd, exitCode);
+            final ProcessProcessor processor = newProcessor();
+            final Process process = startProcess(cmd);
+
+            exitCode = waitForProcess(process, processor);
+            if (null != processor) {
+                processor.finished(cmd, exitCode);
             }
         } finally {
             if (LOG.isInfoEnabled()) {
@@ -59,19 +59,7 @@ public class ProcessStarter {
     }
 
     /**
-     * 在新线程, 使用给定的参数来启动一个当前命令的新进程
-     *
-     * @param args 启动的进程命令参数
-     * @return 启动进程的 {@link ProcessTask}
-     */
-    public ProcessTask submit(final String... args) {
-        ProcessTask task = newTask(args);
-        new Thread(task).start();
-        return task;
-    }
-
-    /**
-     * 创建一个使用给定的参数来启动当前命令的新进程的任务
+     * 创建一个使用给定的参数来启动当前命令的新进程的任务.
      *
      * @param args 启动的进程命令参数
      * @return 启动进程的 {@link ProcessTask}
@@ -81,34 +69,32 @@ public class ProcessStarter {
     }
 
     /**
-     * 创建一个使用给定的命令和参数来启动新进程的任务
+     * 创建一个使用给定的命令和参数来启动新进程的任务.
      *
      * @param command 进程命令
-     * @param args 进程参数
+     * @param args    进程参数
      * @return 启动进程的 {@link ProcessTask}
      */
     ProcessTask newTask(final String[] command, final String... args) {
         final String[] cmd = merge(command, args);
         final Process[] process = new Process[1];
 
-        return new ProcessTask(this, new Callable<Feedback>() {
+        return new ProcessTask(this, new Callable<Integer>() {
+            /**
+             * {@inheritDoc}
+             */
             @Override
-            public Feedback call() throws Exception {
+            public Integer call() throws Exception {
                 int code = -1;
                 try {
-                    ProcessHandler procHandler = newHandler();
+                    final ProcessProcessor processor = newProcessor();
                     process[0] = startProcess(cmd);
-                    final int exitCode = code = waitForProcess(process[0], procHandler);
-                    if (null != procHandler) {
-                        procHandler.finished(cmd, exitCode);
-                    }
 
-                    return new Feedback() {
-                        @Override
-                        public int getExitCode() {
-                            return exitCode;
-                        }
-                    };
+                    final int exitCode = code = waitForProcess(process[0], processor);
+                    if (null != processor) {
+                        processor.finished(cmd, exitCode);
+                    }
+                    return exitCode;
                 } finally {
                     if (LOG.isInfoEnabled()) {
                         LOG.info("Program finished with exit code {} ({})", code, join(" ", cmd));
@@ -116,16 +102,25 @@ public class ProcessStarter {
                 }
             }
         }) {
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public String[] getCommand() {
                 return command;
             }
 
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public String[] getArguments() {
                 return args;
             }
 
+            /**
+             * {@inheritDoc}
+             */
             @Override
             public Process getProcess() {
                 return process[0];
@@ -134,65 +129,60 @@ public class ProcessStarter {
     }
 
     /**
-     * 创建一个新的进程处理器
+     * 创建新的进程处理器.
      */
-    protected ProcessHandler newHandler() {
-        return new ProcessHandlerImpl();
+    protected ProcessProcessor newProcessor() {
+        return new ProcessProcessorImpl();
     }
 
     /**
-     * 使用给定的命令及参数启动一个进程
+     * 启动一个进程.
      *
      * @param command 启动进程的命令及参数
-     * @throws IOException
+     * @throws IOException 如果IO错误抛出此异常
      */
-    private Process startProcess(String[] command) throws IOException {
+    private Process startProcess(final String[] command) throws IOException {
         if (null == command || 1 > command.length) {
             throw new IllegalArgumentException("Program can't find. (empty)");
         }
-        final String program = command[0];
-        // TODO search
 
         if (LOG.isInfoEnabled()) {
-            LOG.info("Execute program: " + join(" ", command));
+            LOG.info("Execute program: {}", join(" ", command));
         }
-
         return Runtime.getRuntime().exec(command);
     }
 
     /**
-     * 使用给定的进程处理器等待进程结束
+     * 等待进程结束.
      *
-     * @param process 要等待的进程
-     * @param procHandler 进程处理器
+     * @param process   要等待的进程
+     * @param processor 进程处理器
      * @return 进程退出返回值
-     * @throws InterruptedException
-     * @throws IOException
+     * @throws InterruptedException 如果进程被打断
+     * @throws IOException          如果发生IO错误
      */
-    private int waitForProcess(final Process process, final ProcessHandler procHandler) throws InterruptedException, IOException {
+    private int waitForProcess(final Process process, final ProcessProcessor processor) throws InterruptedException, IOException {
         FutureTask<Void> outputTask = null;
         FutureTask<Void> errorTask = null;
 
-        if (null != procHandler) {
+        if (null != processor) {
             outputTask = new FutureTask<Void>(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    procHandler.processOutput(process.getInputStream());
+                    processor.processOutput(process.getInputStream());
                     return null;
                 }
             });
             errorTask = new FutureTask<Void>(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    procHandler.processError(process.getErrorStream());
+                    processor.processError(process.getErrorStream());
                     return null;
                 }
             });
 
-            new Thread(outputTask).start();
-            new Thread(errorTask).start();
+            this.doRunTask(outputTask, errorTask);
         }
-
 
         try {
             if (null != outputTask) {
@@ -201,9 +191,8 @@ public class ProcessStarter {
             if (null != errorTask) {
                 errorTask.get();
             }
-        } catch (ExecutionException ex) {
-            Throwable cause = ex.getCause();
-
+        } catch (final ExecutionException ex) {
+            final Throwable cause = ex.getCause();
             if (cause instanceof IOException) {
                 throw (IOException) cause;
             }
@@ -222,18 +211,25 @@ public class ProcessStarter {
             process.getOutputStream().close();
             process.getErrorStream().close();
         } catch (final Exception ex) {
+            // ignore
         }
 
         return returnCode;
     }
 
-    protected String[] merge(String[] array1, String[] array2) {
+    protected void doRunTask(final Runnable... tasks) {
+        for (final Runnable task : tasks) {
+            new Thread(task).start();
+        }
+    }
+
+    private String[] merge(final String[] array1, final String[] array2) {
         final String[] merged = Arrays.copyOf(array1, array1.length + array2.length);
         System.arraycopy(array2, 0, merged, array1.length, array2.length);
         return merged;
     }
 
-    private static String join(String sep, String... args) {
+    private static String join(final String sep, final String... args) {
         if (null == args || args.length == 0) {
             return "";
         }
