@@ -264,7 +264,14 @@ public class HttpServletRouter {
             if (this.doIntercept(Before.class, preInterceptors, pathInfo, urlPattern, httpRequest, httpResponse)) {
                 if (!this.hasInterceptors(After.class, httpRequest.getMethod(), postInterceptors)) {
                     // 不存在后置处理器, 直接执行.
-                    this.doHandle(httpRequest, httpResponse, pathInfo, urlPattern, handler);
+                    try {
+                        this.doHandle(httpRequest, httpResponse, pathInfo, urlPattern, handler);
+                    } catch (final Exception ex) {
+                        log.error("route handler happen error", ex);
+
+                        httpResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        ex.printStackTrace(httpResponse.getWriter());
+                    }
                 } else {
                     // 存在后置处理器, 则异常交由后置处理器处理.
                     Object ret = null;
