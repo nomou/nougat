@@ -15,6 +15,7 @@ import freework.web.servlet.annotation.Put;
 import freework.web.servlet.annotation.RequestParam;
 import freework.web.servlet.annotation.RequestPart;
 import freework.web.util.UriTemplateParser;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
 import javax.servlet.ServletException;
@@ -24,6 +25,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
@@ -44,6 +46,7 @@ import java.util.regex.Matcher;
  * @author vacoor
  * @since 1.0
  */
+@Slf4j
 public class HttpServletRouter {
     private static final String GET = "GET";
     private static final String POST = "POST";
@@ -259,19 +262,28 @@ public class HttpServletRouter {
         final Method handler = mappedHandlers.get(new MappingKey(method.toUpperCase(), urlPattern));
         if (null != handler) {
             if (this.doIntercept(Before.class, preInterceptors, pathInfo, urlPattern, httpRequest, httpResponse)) {
-                Object ret = null;
-                Throwable throwing = null;
-                try {
-                    ret = this.doHandle(httpRequest, httpResponse, pathInfo, urlPattern, handler);
-                } catch (final Throwable ex) {
-                    throwing = ex;
-                }
+                if (!this.hasInterceptors(After.class, httpRequest.getMethod(), postInterceptors)) {
+                    // 不存在后置处理器, 直接执行.
+                    this.doHandle(httpRequest, httpResponse, pathInfo, urlPattern, handler);
+                } else {
+                    // 存在后置处理器, 则异常交由后置处理器处理.
+                    Object ret = null;
+                    Throwable throwing = null;
+                    try {
+                        ret = this.doHandle(httpRequest, httpResponse, pathInfo, urlPattern, handler);
+                    } catch (final Throwable ex) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("route handler happen error", ex);
+                        }
+                        throwing = ex;
+                    }
 
-                try {
-                    invoked.set(new Returning(handler, ret, throwing));
-                    this.doIntercept(After.class, postInterceptors, pathInfo, urlPattern, httpRequest, httpResponse);
-                } finally {
-                    invoked.remove();
+                    try {
+                        invoked.set(new Returning(handler, ret, throwing));
+                        this.doIntercept(After.class, postInterceptors, pathInfo, urlPattern, httpRequest, httpResponse);
+                    } finally {
+                        invoked.remove();
+                    }
                 }
             }
         } else {
@@ -320,7 +332,7 @@ public class HttpServletRouter {
      * 执行拦截逻辑.
      *
      * @param interceptType 拦截类型
-     * @param interceptors  所有拦截器
+     * @param candidates    所有拦截器
      * @param pathInfo      请求的路径
      * @param urlPattern    匹配的Url-Pattern
      * @param httpRequest   the http request
@@ -329,20 +341,11 @@ public class HttpServletRouter {
      * @throws ServletException 如果http请求不能处理
      * @throws IOException      如果输入或输出发生错误
      */
-    private boolean doIntercept(final Class<? extends Annotation> interceptType, final List<Method> interceptors,
+    private boolean doIntercept(final Class<? extends Annotation> interceptType, final List<Method> candidates,
                                 final String pathInfo, final String urlPattern, final HttpServletRequest httpRequest,
                                 final HttpServletResponse httpResponse) throws ServletException, IOException {
-        for (final Method interceptor : interceptors) {
-            final Annotation ann = interceptor.getAnnotation(interceptType);
-            String[] interceptMethods;
-            if (Before.class.equals(interceptType)) {
-                interceptMethods = Before.class.cast(ann).methods();
-            } else if (After.class.equals(interceptType)) {
-                interceptMethods = After.class.cast(ann).methods();
-            } else {
-                throw new IllegalArgumentException(String.format("illegal intercept type: %s", interceptType));
-            }
-
+        for (final Method interceptor : candidates) {
+            final String[] interceptMethods = getInterceptMethods(interceptor, interceptType);
             final List<String> upperInterceptMethods = new ArrayList<>(interceptMethods.length);
             for (final String method : interceptMethods) {
                 upperInterceptMethods.add(method.toUpperCase());
@@ -357,12 +360,51 @@ public class HttpServletRouter {
 
             final Object ret = doInvoke(interceptor, this.target, args);
             if (boolean.class.isAssignableFrom(interceptor.getReturnType())) {
+                // 当前拦截器返回值是false时表示立即终止执行.
                 if (!Boolean.class.cast(ret)) {
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    /**
+     * 是否存在拦截给定http方法的给定类型的拦截器.
+     *
+     * @param interceptType 拦截类型
+     * @param httpMethod    Http请求方法
+     * @param candidates    候选拦截器
+     * @return 是否存在符合条件的拦截器
+     */
+    private boolean hasInterceptors(final Class<? extends Annotation> interceptType, final String httpMethod, final List<Method> candidates) {
+        for (final Method interceptor : candidates) {
+            final String[] interceptMethods = getInterceptMethods(interceptor, interceptType);
+            final List<String> upperInterceptMethods = new ArrayList<>(interceptMethods.length);
+            for (final String method : interceptMethods) {
+                upperInterceptMethods.add(method.toUpperCase());
+            }
+
+            if (!upperInterceptMethods.isEmpty() && !upperInterceptMethods.contains(httpMethod.toUpperCase())) {
+                continue;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private String[] getInterceptMethods(final Method interceptor, final Class<? extends Annotation> interceptType) {
+        final Annotation ann = interceptor.getAnnotation(interceptType);
+
+        String[] interceptMethods;
+        if (Before.class.equals(interceptType)) {
+            interceptMethods = Before.class.cast(ann).methods();
+        } else if (After.class.equals(interceptType)) {
+            interceptMethods = After.class.cast(ann).methods();
+        } else {
+            throw new IllegalArgumentException(String.format("illegal intercept type: %s", interceptType));
+        }
+        return interceptMethods;
     }
 
     /**
@@ -473,7 +515,7 @@ public class HttpServletRouter {
         if (String[].class.isAssignableFrom(type)) {
             return httpRequest.getParameterValues(name);
         }
-        throw new IllegalStateException(String.format("the parameter annotated by %s must be a String or String[] type", RequestParam.class.getName()));
+        throw new IllegalStateException(String.format("the parameter '%s' annotated by %s must be a String or String[] type", name, RequestParam.class.getName()));
     }
 
 
@@ -488,10 +530,10 @@ public class HttpServletRouter {
     private Object resolveRequestPart(final RequestPart param, final Class<?> type, final HttpServletRequest httpRequest) throws ServletException, IOException {
         final String name = param.value();
         if (isMultipart(httpRequest)) {
-            if (RequestPart.class.isAssignableFrom(type)) {
+            if (Part.class.isAssignableFrom(type)) {
                 return httpRequest.getPart(name);
             }
-            throw new IllegalStateException(String.format("the parameter annotated by %s must be a javax.servlet.http.Part type", RequestPart.class.getName()));
+            throw new IllegalStateException(String.format("the parameter '%s' annotated by %s must be a javax.servlet.http.Part type", name, RequestPart.class.getName()));
         }
         throw new IllegalStateException("the request must be a multipart request");
     }
@@ -520,7 +562,7 @@ public class HttpServletRouter {
             }
             return null;
         }
-        throw new IllegalStateException(String.format("the parameter annotated by %s must be a String type", PathParam.class.getName()));
+        throw new IllegalStateException(String.format("the parameter '%s' annotated by %s must be a String type", name, PathParam.class.getName()));
     }
 
     /**
@@ -544,7 +586,7 @@ public class HttpServletRouter {
             }
             return String.class.isAssignableFrom(type) ? values.iterator().next() : values;
         }
-        throw new IllegalStateException(String.format("the parameter annotated by %s must be a String or String[] type", HeaderParam.class.getName()));
+        throw new IllegalStateException(String.format("the parameter '%s' annotated by %s must be a String or String[] type", name, HeaderParam.class.getName()));
     }
 
     /**
@@ -571,7 +613,7 @@ public class HttpServletRouter {
             }
             return String.class.isAssignableFrom(type) ? values.iterator().next() : values;
         }
-        throw new IllegalStateException(String.format("the parameter annotated by %s must be a String or String[] type", CookieParam.class.getName()));
+        throw new IllegalStateException(String.format("the parameter '%s' annotated by %s must be a String or String[] type", name, CookieParam.class.getName()));
     }
 
     /**
