@@ -103,6 +103,20 @@ public class HttpServletRouter {
         }
     };
 
+    private static final Map<Class<? extends Annotation>, String> HTTP_METHOD_ANNOTATION_TYPES;
+
+    static {
+        final Map<Class<? extends Annotation>, String> types = new HashMap<>();
+        types.put(Get.class, GET);
+        types.put(Post.class, POST);
+        types.put(Put.class, PUT);
+        types.put(Delete.class, DELETE);
+        types.put(Head.class, HEAD);
+        types.put(Options.class, OPTIONS);
+
+        HTTP_METHOD_ANNOTATION_TYPES = Collections.unmodifiableMap(types);
+    }
+
     /**
      * 处理结果.
      */
@@ -668,29 +682,18 @@ public class HttpServletRouter {
         final List<Method> postInterceptors = new ArrayList<>();
 
         for (final Method method : methods) {
-            if (method.isAnnotationPresent(Get.class)) {
-                final String[] urlPatterns = method.getAnnotation(Get.class).value();
-                addMapping(method, GET, urlPatterns, mapping);
-            }
-            if (method.isAnnotationPresent(Post.class)) {
-                final String[] urlPatterns = method.getAnnotation(Post.class).value();
-                addMapping(method, POST, urlPatterns, mapping);
-            }
-            if (method.isAnnotationPresent(Put.class)) {
-                final String[] urlPatterns = method.getAnnotation(Put.class).value();
-                addMapping(method, PUT, urlPatterns, mapping);
-            }
-            if (method.isAnnotationPresent(Delete.class)) {
-                final String[] urlPatterns = method.getAnnotation(Delete.class).value();
-                addMapping(method, DELETE, urlPatterns, mapping);
-            }
-            if (method.isAnnotationPresent(Head.class)) {
-                final String[] urlPatterns = method.getAnnotation(Head.class).value();
-                addMapping(method, HEAD, urlPatterns, mapping);
-            }
-            if (method.isAnnotationPresent(Options.class)) {
-                final String[] urlPatterns = method.getAnnotation(Options.class).value();
-                addMapping(method, OPTIONS, urlPatterns, mapping);
+            for (final Map.Entry<Class<? extends Annotation>, String> entry : HTTP_METHOD_ANNOTATION_TYPES.entrySet()) {
+                final Class<? extends Annotation> annoType = entry.getKey();
+                final Annotation anno = method.getAnnotation(annoType);
+                if (null == anno) {
+                    continue;
+                }
+                try {
+                    final String[] urlPatterns = (String[]) anno.getClass().getMethod("value").invoke(anno);
+                    addMapping(method, entry.getValue(), urlPatterns, mapping);
+                } catch (final Exception e) {
+                    throw new IllegalStateException("Could not find value method on HttpMethod annotation.  Cause: " + e, e);
+                }
             }
             if (method.isAnnotationPresent(Before.class)) {
                 preInterceptors.add(method);
