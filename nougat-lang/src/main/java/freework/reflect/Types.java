@@ -5,12 +5,7 @@
  */
 package freework.reflect;
 
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
+import java.lang.reflect.*;
 
 /**
  * Utilities of Type.
@@ -152,32 +147,63 @@ public abstract class Types {
     }
 
     /**
-     * Gets the component type of the array/java.util.Iterable type.
+     * Gets the component type of the array/java.util.Iterable type (use type variable bound as type if type is type variable).
      *
-     * @param type the array/{@link java.lang.Iterable} type
+     * @param type        the array/{@link java.lang.Iterable} type
+     * @param runtimeType the array/java.util.Iterable context type
      * @return the component type if resolved, otherwise null
      */
     @SuppressWarnings("unchecked")
     public static Type resolveComponentType(final Type type, final Type runtimeType) {
-        final Type resolvedType = resolveType(type, runtimeType);
+        return resolveComponentType(type, runtimeType, true);
+    }
+
+    /**
+     * Gets the component type of the array/java.util.Iterable type.
+     *
+     * @param type        the array/{@link java.lang.Iterable} type
+     * @param runtimeType the array/java.util.Iterable context type
+     * @param boundAsType use type variable bound as component type
+     * @return the component type if resolved, otherwise null
+     */
+    public static Type resolveComponentType(final Type type, final Type runtimeType, final boolean boundAsType) {
+        final Type resolvedType = resolveType(type, runtimeType, boundAsType);
         if (isClass(resolvedType)) {
             final Class<?> clazz = toClass(resolvedType);
             if (clazz.isArray()) {
                 return clazz.getComponentType();
             }
             if (Iterable.class.isAssignableFrom(clazz)) {
-                return resolveType(Iterable.class.getTypeParameters()[0], clazz);
+                return resolveType(Iterable.class.getTypeParameters()[0], clazz, boundAsType);
             }
             return null;
         } else if (isParameterizedType(resolvedType)) {
             final Class<?> clazz = getRawClass(toParameterizedType(resolvedType));
             if (Iterable.class.isAssignableFrom(clazz)) {
-                return resolveType(Iterable.class.getTypeParameters()[0], resolvedType);
+                return resolveType(Iterable.class.getTypeParameters()[0], resolvedType, boundAsType);
             }
         } else if (isGenericArrayType(resolvedType)) {
             return toGenericArrayType(resolvedType).getGenericComponentType();
         }
         return null;
+    }
+
+    /**
+     * Gets the resolved type (use type variable bound as type if type is type variable).
+     * <p>
+     * Examples:
+     * <ul>
+     * <li>Gets the iterable generic type variable: Types.resolveType(Iterable.class.getTypeParameters()[0], resolvedType);</li>
+     * <li>Gets the resolved method generic return type: Types.resolveType(Method.getGenericReturnType(), clazz);</li>
+     * </ul>
+     * </p>
+     *
+     * @param type        the type
+     * @param runtimeType the type arguments context
+     * @return the resolved type
+     */
+    public static Type resolveType(final Type type, final Type runtimeType) {
+        return resolveType(type, runtimeType, true);
     }
 
     /**
@@ -192,32 +218,58 @@ public abstract class Types {
      *
      * @param type        the type
      * @param runtimeType the type arguments context
+     * @param boundAsType use type variable bound as component type
      * @return the resolved type
      */
-    public static Type resolveType(final Type type, final Type runtimeType) {
+    public static Type resolveType(final Type type, final Type runtimeType, final boolean boundAsType) {
+        Type ret = type;
         if (isWildcardType(type)) {
-            return resolveWildcardType(toWildcardType(type), runtimeType);
+            ret = resolveWildcardType(toWildcardType(type), runtimeType);
         } else if (isTypeVariable(type)) {
-            return resolveTypeVariable(toTypeVariable(type), runtimeType);
+            ret = resolveTypeVariable(toTypeVariable(type), runtimeType);
         } else if (isParameterizedType(type)) {
-            return resolveParameterizedType(toParameterizedType(type), runtimeType);
+            ret = resolveParameterizedType(toParameterizedType(type), runtimeType);
         } else if (isGenericArrayType(type)) {
-            return resolveGenericArrayType(toGenericArrayType(type), runtimeType);
+            ret = resolveGenericArrayType(toGenericArrayType(type), runtimeType);
         }
-        return type;
+        if (ret instanceof TypeVariable) {
+            final TypeVariable<GenericDeclaration> typeVariable = toTypeVariable(ret);
+            if (boundAsType) {
+                ret = boundAsType(typeVariable);
+            }
+            /* keep the outermost type
+            final Type[] bounds = typeVariable.getBounds();
+            boolean resolved = false;
+            for (int i = 0; i < bounds.length; i++) {
+                final Type boundType = bounds[i];
+                bounds[i] = boundAsType(boundType);
+                resolved = resolved || boundType.equals(bounds[i]);
+            }
+            if (resolved) {
+                ret = TypeFactory.createTypeVariable(typeVariable.getName(), typeVariable.getGenericDeclaration(), bounds);
+            }
+            */
+        }
+        return ret;
+    }
+
+    private static Type boundAsType(final Type bound) {
+        Type b = bound;
+        while (isTypeVariable(b)) {
+            final TypeVariable<GenericDeclaration> typeVariable = toTypeVariable(b);
+            final Type[] bounds = typeVariable.getBounds();
+            if (1 == bounds.length) {
+                return boundAsType(bounds[0]);
+            }
+        }
+        return b;
     }
 
     private static Type resolveWildcardType(final WildcardType type, final Type runtimeType) {
         final Type[] lowerBounds = type.getLowerBounds();
         final Type[] upperBounds = type.getUpperBounds();
-
-        for (int i = 0; i < lowerBounds.length; i++) {
-            lowerBounds[i] = resolveType(lowerBounds[i], runtimeType);
-        }
-        for (int i = 0; i < upperBounds.length; i++) {
-            upperBounds[i] = resolveType(upperBounds[i], runtimeType);
-        }
-        return TypeFactory.createWildcardType(upperBounds, lowerBounds);
+        final boolean resolved = doResolve(lowerBounds, runtimeType) || doResolve(upperBounds, runtimeType);
+        return resolved ? TypeFactory.createWildcardType(upperBounds, lowerBounds) : type;
     }
 
     private static Type resolveTypeVariable(final TypeVariable<? extends GenericDeclaration> typeVariable, final Type runtimeType) {
@@ -241,25 +293,40 @@ public abstract class Types {
 
             final Type[] typeArguments = resolveTypeVariables(runtimeType, declaringClass);
             return matches(typeVariable, declaringClass, typeArguments);
+        } else if (declaration instanceof Method) {
+            final Type[] bounds = typeVariable.getBounds();
+            final boolean resolved = doResolve(bounds, runtimeType);
+            /*-
+            // bound as type ?
+            if (resolved && 1 == bounds.length) {
+                return bounds[0];
+            }
+            */
+            return resolved ? TypeFactory.createTypeVariable(typeVariable.getName(), declaration, bounds) : typeVariable;
         }
         return typeVariable;
     }
 
-    private static Type resolveParameterizedType(final ParameterizedType type, final Type runtimeType) {
+    private static boolean doResolve(final Type[] types, final Type runtimeType) {
         boolean resolved = false;
-        final Type[] typeArguments = type.getActualTypeArguments();
-        for (int i = 0; i < typeArguments.length; i++) {
-            final Type typeArgument = typeArguments[i];
-            typeArguments[i] = resolveType(typeArgument, runtimeType);
-            resolved = resolved || typeArgument != typeArguments[i];
+        for (int i = 0; i < types.length; i++) {
+            final Type type = types[i];
+            types[i] = resolveType(type, runtimeType);
+            resolved = resolved || !type.equals(types[i]);
         }
+        return resolved;
+    }
+
+    private static Type resolveParameterizedType(final ParameterizedType type, final Type runtimeType) {
+        final Type[] typeArguments = type.getActualTypeArguments();
+        final boolean resolved = doResolve(typeArguments, runtimeType);
         return !resolved ? type : TypeFactory.createParameterizedType(type.getRawType(), typeArguments, null);
     }
 
     private static Type resolveGenericArrayType(final GenericArrayType type, final Type runtimeType) {
         final Type componentType = type.getGenericComponentType();
         final Type resolvedType = resolveType(componentType, runtimeType);
-        return componentType == resolvedType ? type : TypeFactory.createGenericArrayType(resolvedType);
+        return !componentType.equals(resolvedType) ? TypeFactory.createGenericArrayType(resolvedType) : type;
     }
 
     private static Type matches(final TypeVariable<?> typeVariable, final Class<?> declaringClass, final Type[] resolvedTypeArguments) {
