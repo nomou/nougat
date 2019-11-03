@@ -224,13 +224,13 @@ public abstract class Types {
     public static Type resolveType(final Type type, final Type runtimeType, final boolean boundAsType) {
         Type ret = type;
         if (isWildcardType(type)) {
-            ret = resolveWildcardType(toWildcardType(type), runtimeType);
+            ret = resolveWildcardType(toWildcardType(type), runtimeType, boundAsType);
         } else if (isTypeVariable(type)) {
-            ret = resolveTypeVariable(toTypeVariable(type), runtimeType);
+            ret = resolveTypeVariable(toTypeVariable(type), runtimeType, boundAsType);
         } else if (isParameterizedType(type)) {
-            ret = resolveParameterizedType(toParameterizedType(type), runtimeType);
+            ret = resolveParameterizedType(toParameterizedType(type), runtimeType, boundAsType);
         } else if (isGenericArrayType(type)) {
-            ret = resolveGenericArrayType(toGenericArrayType(type), runtimeType);
+            ret = resolveGenericArrayType(toGenericArrayType(type), runtimeType, boundAsType);
         }
         if (ret instanceof TypeVariable) {
             final TypeVariable<GenericDeclaration> typeVariable = toTypeVariable(ret);
@@ -254,25 +254,24 @@ public abstract class Types {
     }
 
     private static Type boundAsType(final Type bound) {
-        Type b = bound;
-        while (isTypeVariable(b)) {
-            final TypeVariable<GenericDeclaration> typeVariable = toTypeVariable(b);
+        if (isTypeVariable(bound)) {
+            final TypeVariable<GenericDeclaration> typeVariable = toTypeVariable(bound);
             final Type[] bounds = typeVariable.getBounds();
             if (1 == bounds.length) {
                 return boundAsType(bounds[0]);
             }
         }
-        return b;
+        return bound;
     }
 
-    private static Type resolveWildcardType(final WildcardType type, final Type runtimeType) {
+    private static Type resolveWildcardType(final WildcardType type, final Type runtimeType, final boolean boundAsType) {
         final Type[] lowerBounds = type.getLowerBounds();
         final Type[] upperBounds = type.getUpperBounds();
-        final boolean resolved = doResolve(lowerBounds, runtimeType) || doResolve(upperBounds, runtimeType);
+        final boolean resolved = doResolve(lowerBounds, runtimeType, boundAsType) || doResolve(upperBounds, runtimeType, boundAsType);
         return resolved ? TypeFactory.createWildcardType(upperBounds, lowerBounds) : type;
     }
 
-    private static Type resolveTypeVariable(final TypeVariable<? extends GenericDeclaration> typeVariable, final Type runtimeType) {
+    private static Type resolveTypeVariable(final TypeVariable<? extends GenericDeclaration> typeVariable, final Type runtimeType, final boolean boundAsType) {
         final GenericDeclaration declaration = typeVariable.getGenericDeclaration();
         // XXX: Only resolve type variables defined on the class
         if (declaration instanceof Class<?>) {
@@ -295,7 +294,7 @@ public abstract class Types {
             return matches(typeVariable, declaringClass, typeArguments);
         } else if (declaration instanceof Method) {
             final Type[] bounds = typeVariable.getBounds();
-            final boolean resolved = doResolve(bounds, runtimeType);
+            final boolean resolved = doResolve(bounds, runtimeType, boundAsType);
             /*-
             // bound as type ?
             if (resolved && 1 == bounds.length) {
@@ -307,25 +306,25 @@ public abstract class Types {
         return typeVariable;
     }
 
-    private static boolean doResolve(final Type[] types, final Type runtimeType) {
+    private static boolean doResolve(final Type[] types, final Type runtimeType, final boolean boundAsType) {
         boolean resolved = false;
         for (int i = 0; i < types.length; i++) {
             final Type type = types[i];
-            types[i] = resolveType(type, runtimeType);
+            types[i] = resolveType(type, runtimeType, boundAsType);
             resolved = resolved || !type.equals(types[i]);
         }
         return resolved;
     }
 
-    private static Type resolveParameterizedType(final ParameterizedType type, final Type runtimeType) {
+    private static Type resolveParameterizedType(final ParameterizedType type, final Type runtimeType, final boolean boundAsType) {
         final Type[] typeArguments = type.getActualTypeArguments();
-        final boolean resolved = doResolve(typeArguments, runtimeType);
+        final boolean resolved = doResolve(typeArguments, runtimeType, boundAsType);
         return !resolved ? type : TypeFactory.createParameterizedType(type.getRawType(), typeArguments, null);
     }
 
-    private static Type resolveGenericArrayType(final GenericArrayType type, final Type runtimeType) {
+    private static Type resolveGenericArrayType(final GenericArrayType type, final Type runtimeType, final boolean boundAsType) {
         final Type componentType = type.getGenericComponentType();
-        final Type resolvedType = resolveType(componentType, runtimeType);
+        final Type resolvedType = resolveType(componentType, runtimeType, boundAsType);
         return !componentType.equals(resolvedType) ? TypeFactory.createGenericArrayType(resolvedType) : type;
     }
 
@@ -411,5 +410,98 @@ public abstract class Types {
 
     private static Class<?> getRawClass(final ParameterizedType parameterizedType) {
         return toClass(parameterizedType.getRawType());
+    }
+
+    public static boolean canAccept(final Type expectedType, final Type actualType) {
+        return expectedType.equals(actualType) || new TypeSwitch<Boolean>() {
+            @Override
+            protected Boolean caseClass(final Class classType) {
+                return isClass(actualType) && classType.isAssignableFrom(Types.toClass(actualType));
+            }
+
+            @Override
+            protected Boolean caseWildcardType(final WildcardType wildcardType) {
+                Type[] actualUpperBounds;
+                Type[] actualLowerBounds;
+                if (isClass(actualType)) {
+                    actualUpperBounds = new Type[]{toClass(actualType)};
+                    actualLowerBounds = actualUpperBounds;
+                } else if (isWildcardType(actualType)) {
+                    final WildcardType actualWildcardType = toWildcardType(actualType);
+                    actualUpperBounds = actualWildcardType.getUpperBounds();
+                    actualLowerBounds = actualWildcardType.getLowerBounds();
+                } else {
+                    actualUpperBounds = new Type[]{Object.class};
+                    actualLowerBounds = actualUpperBounds;
+                }
+
+                final Type[] expectedUpperBounds = wildcardType.getUpperBounds();
+                final Type[] expectedLowerBounds = wildcardType.getLowerBounds();
+
+                for (final Type expectedUpperBound : expectedUpperBounds) {
+                    for (final Type actualUpperBound : actualUpperBounds) {
+                        if (!canAccept(expectedUpperBound, actualUpperBound)) {
+                            return false;
+                        }
+                    }
+                }
+                for (final Type lowerBound : expectedLowerBounds) {
+                    for (final Type actualLowerBound : actualLowerBounds) {
+                        if (!canAccept(actualLowerBound, lowerBound)) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            protected Boolean caseParameterizedType(final ParameterizedType parameterizedType) {
+                final Type expectedRawType = parameterizedType.getRawType();
+                final Type[] expectedTypeArgs = parameterizedType.getActualTypeArguments();
+                if (isClass(expectedRawType)) {
+                    final Class<?> parentClass = toClass(expectedRawType);
+                    final TypeVariable<? extends Class<?>>[] typeArgs = parentClass.getTypeParameters();
+
+                    Class<?> actualRawClass = null;
+                    if (isClass(actualType)) {
+                        actualRawClass = toClass(actualType);
+                    } else if (isParameterizedType(actualType)) {
+                        final ParameterizedType actualParameterizedType = toParameterizedType(actualType);
+                        final Type actualRawType = actualParameterizedType.getRawType();
+                        actualRawClass = isClass(actualRawType) ? toClass(actualRawType) : null;
+                    }
+                    if (null != actualRawClass && parentClass.isAssignableFrom(actualRawClass)) {
+                        for (int index = 0; index < typeArgs.length; index++) {
+                            if (!canAccept(expectedTypeArgs[index], resolveType(typeArgs[index], actualType, false))) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            protected Boolean caseGenericArrayType(final GenericArrayType genericArrayType) {
+                final Type expectedComponentType = genericArrayType.getGenericComponentType();
+                if (isClass(actualType)) {
+                    final Class<?> actualClass = toClass(actualType);
+                    if (actualClass.isArray()) {
+                        return canAccept(expectedComponentType, actualClass.getComponentType());
+                    }
+                } else if (isGenericArrayType(actualType)) {
+                    final GenericArrayType actualArrayType = toGenericArrayType(actualType);
+                    return canAccept(expectedComponentType, actualArrayType.getGenericComponentType());
+                }
+                return false;
+            }
+
+            @Override
+            protected Boolean defaultCase(final Type type) {
+                return type.equals(actualType);
+            }
+        }.doSwitch(expectedType);
     }
 }
