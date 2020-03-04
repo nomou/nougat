@@ -13,7 +13,7 @@
 
     <properties>
         <!-- jackson json -->
-        <jackson.version>2.3.0</jackson.version>
+        <jackson.version>2.10.3</jackson.version>
         <guava.version>15.0</guava.version>
         <zxing.version>2.3.0</zxing.version>
         <json-schema-validator.version>2.2.6</json-schema-validator.version>
