@@ -3,17 +3,67 @@ package freework.crypto.cipher;
 import freework.codec.Base64;
 import freework.util.Bytes;
 
-import javax.crypto.*;
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
+import javax.crypto.CipherOutputStream;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.security.*;
-import java.security.spec.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
 /**
  * Java encryption and decryption.
+ * <p>
+ * <code>
+ * <pre>
+ * Example1:
+ * ----------------------
+ * final String transformation = "AES/CBC/PKCS5Padding";
+ * final SecretKey secretKey = Crypt.newSymmetricKey(transformation);
+ * final Crypt crypt = Crypt.getSymmetric(transformation, secretKey);
+ * final String encrypted = crypt.encrypt("111111");
+ * System.out.println(encrypted);
+ *
+ * Example2: AES + PBKDF2
+ * ----------------------
+ * final String salt = "3FF2EC0C9C6B7B945225DEBAD71A01B6965FE84C95A70EB132A82F88C0A59A55";
+ * final String passphrase = "AB33T33##bbsd993339x92";
+ * final String iv = "FF245C99227E6B2EFE7510B35DD3D137";
+ *
+ * final PBEKeySpec keySpec = new PBEKeySpec(passphrase.toCharArray(), Hex.decode(salt), 800, 128);
+ * final SecretKey key = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1").generateSecret(keySpec);
+ * final SecretKey secretKey = new SecretKeySpec(key.getEncoded(), "AES");
+ * final IvParameterSpec ivParameterSpec = new IvParameterSpec(Hex.decode(iv));
+ *
+ * final Crypt crypt = Crypt.getSymmetric("AES/CBC/PKCS5Padding", secretKey, ivParameterSpec);
+ * final String encrypted = crypt.encrypt("111111");
+ * System.out.println(encrypted);
+ * </pre>
+ * </code>
+ * </p>
  *
  * @author vacoor
  * @since 1.0
@@ -130,24 +180,25 @@ public abstract class Crypt {
     /**
      * Encrypt/decrypt given bytes or wrap given input/output stream.
      *
-     * @param transformation the name of the transformation
-     * @param opmode         the operation mode of this cipher
-     *                       (this is one of the following: Cipher#ENCRYPT_MODE, Cipher#DECRYPT_MODE)
-     * @param key            the key of encryption or decryption
-     * @param params         the algorithm parameters
-     * @param source         bytes or input/output stream
-     * @param <T>            source type
+     * @param transformation         the name of the transformation
+     * @param opmode                 the operation mode of this cipher
+     *                               (this is one of the following: Cipher#ENCRYPT_MODE, Cipher#DECRYPT_MODE)
+     * @param key                    the key of encryption or decryption
+     * @param algorithmParameterSpec the specification of cryptographic parameters
+     * @param source                 bytes or input/output stream
+     * @param <T>                    source type
      * @return cipher/plain bytes or wrapped input/output stream
      */
     @SuppressWarnings({"unchecked"})
-    protected <T> T doCrypt(final String transformation, final int opmode, final Key key, final AlgorithmParameterSpec params, final T source) {
+    protected <T> T doCrypt(final String transformation, final int opmode, final Key key,
+                            final AlgorithmParameterSpec algorithmParameterSpec, final T source) {
         try {
             if (source instanceof byte[]) {
-                return (T) this.doCryptInternal(transformation, opmode, key, params, new SecureRandom(), (byte[]) source);
+                return (T) this.doCryptInternal(transformation, opmode, key, algorithmParameterSpec, new SecureRandom(), (byte[]) source);
             } else if (source instanceof InputStream) {
-                return (T) this.doCryptInternal(transformation, opmode, key, params, new SecureRandom(), (InputStream) source);
+                return (T) this.doCryptInternal(transformation, opmode, key, algorithmParameterSpec, new SecureRandom(), (InputStream) source);
             } else if (source instanceof OutputStream) {
-                return (T) this.doCryptInternal(transformation, opmode, key, params, new SecureRandom(), (OutputStream) source);
+                return (T) this.doCryptInternal(transformation, opmode, key, algorithmParameterSpec, new SecureRandom(), (OutputStream) source);
             } else {
                 throw new IllegalArgumentException("source must be instance of byte[] or InputStream or OutputStream");
             }
@@ -308,22 +359,26 @@ public abstract class Crypt {
      */
     private static class Symmetric extends Crypt {
         private final String transformation;
-        private final SecretKey key;
+        private final SecretKey secretKey;
+        private final AlgorithmParameterSpec algorithmParameterSpec;
 
         /**
          * Instantiate symmetric encryption algorithm crypt.
          *
-         * @param transformation the name of the transformation
-         * @param key            encrypt/decrypt key
+         * @param transformation         the name of the transformation
+         * @param secretKey              encrypt/decrypt key
+         * @param algorithmParameterSpec the specification of cryptographic parameters
          */
-        private Symmetric(final String transformation, final SecretKey key) {
-            final String algorithm = key.getAlgorithm();
+        private Symmetric(final String transformation, final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
+            final String algorithm = secretKey.getAlgorithm();
+            final String finalTransformation = null != transformation ? transformation : secretKey.getAlgorithm();
 
-            if (!transformation.toUpperCase().startsWith(algorithm)) {
+            if (!finalTransformation.toUpperCase().startsWith(algorithm)) {
                 throw new IllegalArgumentException("key algorithm and transformation algorithm not matches");
             }
-            this.transformation = transformation;
-            this.key = key;
+            this.transformation = finalTransformation;
+            this.secretKey = secretKey;
+            this.algorithmParameterSpec = algorithmParameterSpec;
         }
 
         /**
@@ -331,7 +386,7 @@ public abstract class Crypt {
          */
         @Override
         public byte[] encrypt(final byte[] bytes) {
-            return doCrypt(transformation, Cipher.ENCRYPT_MODE, key, null, bytes);
+            return doCrypt(transformation, Cipher.ENCRYPT_MODE, secretKey, algorithmParameterSpec, bytes);
         }
 
         /**
@@ -339,7 +394,7 @@ public abstract class Crypt {
          */
         @Override
         public byte[] decrypt(final byte[] bytes) {
-            return doCrypt(transformation, Cipher.DECRYPT_MODE, key, null, bytes);
+            return doCrypt(transformation, Cipher.DECRYPT_MODE, secretKey, algorithmParameterSpec, bytes);
         }
 
         /**
@@ -347,7 +402,7 @@ public abstract class Crypt {
          */
         @Override
         public InputStream wrap(final int opmode, final InputStream in) {
-            return doCrypt(transformation, opmode, key, null, in);
+            return doCrypt(transformation, opmode, secretKey, algorithmParameterSpec, in);
         }
 
         /**
@@ -355,7 +410,7 @@ public abstract class Crypt {
          */
         @Override
         public OutputStream wrap(final int opmode, final OutputStream out) {
-            return doCrypt(transformation, opmode, key, null, out);
+            return doCrypt(transformation, opmode, secretKey, algorithmParameterSpec, out);
         }
     }
 
@@ -365,14 +420,16 @@ public abstract class Crypt {
     private static class Asymmetric extends Crypt {
         private final String transformation;
         private final KeyPair key;
+        private final AlgorithmParameterSpec algorithmParameterSpec;
 
         /**
          * Instantiate asymmetric encryption algorithm crypt.
          *
-         * @param transformation the name of the transformation
-         * @param key            encrypt and decrypt key pair
+         * @param transformation         the name of the transformation
+         * @param key                    encrypt and decrypt key pair
+         * @param algorithmParameterSpec the specification of cryptographic parameters
          */
-        private Asymmetric(final String transformation, final KeyPair key) {
+        private Asymmetric(final String transformation, final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
             final PublicKey publicKey = key.getPublic();
             final PrivateKey privateKey = key.getPrivate();
             final String publicAlgorithm = null != publicKey ? publicKey.getAlgorithm() : null;
@@ -392,6 +449,7 @@ public abstract class Crypt {
 
             this.transformation = null != transformation ? transformation : algorithm;
             this.key = key;
+            this.algorithmParameterSpec = algorithmParameterSpec;
         }
 
         /**
@@ -399,7 +457,7 @@ public abstract class Crypt {
          */
         @Override
         public byte[] encrypt(final byte[] bytes) {
-            return doCrypt(transformation, Cipher.ENCRYPT_MODE, this.getRequiredKey(Cipher.ENCRYPT_MODE), null, bytes);
+            return doCrypt(transformation, Cipher.ENCRYPT_MODE, this.getRequiredKey(Cipher.ENCRYPT_MODE), algorithmParameterSpec, bytes);
         }
 
         /**
@@ -407,7 +465,7 @@ public abstract class Crypt {
          */
         @Override
         public byte[] decrypt(final byte[] bytes) {
-            return doCrypt(transformation, Cipher.DECRYPT_MODE, getRequiredKey(Cipher.DECRYPT_MODE), null, bytes);
+            return doCrypt(transformation, Cipher.DECRYPT_MODE, getRequiredKey(Cipher.DECRYPT_MODE), algorithmParameterSpec, bytes);
         }
 
         /**
@@ -415,7 +473,7 @@ public abstract class Crypt {
          */
         @Override
         public InputStream wrap(final int opmode, final InputStream in) {
-            return doCrypt(transformation, opmode, this.getRequiredKey(opmode), null, in);
+            return doCrypt(transformation, opmode, this.getRequiredKey(opmode), algorithmParameterSpec, in);
         }
 
         /**
@@ -423,7 +481,7 @@ public abstract class Crypt {
          */
         @Override
         public OutputStream wrap(final int opmode, final OutputStream out) {
-            return doCrypt(transformation, opmode, this.getRequiredKey(opmode), null, out);
+            return doCrypt(transformation, opmode, this.getRequiredKey(opmode), algorithmParameterSpec, out);
         }
 
         /**
@@ -479,12 +537,36 @@ public abstract class Crypt {
      * Creates a symmetric crypt.
      *
      * @param transformation the name of transformation
-     * @param key            the secret key
+     * @param secretKey      the secret key
      * @return the symmetric crypt object
      */
-    public static Crypt getSymmetric(final String transformation, final SecretKey key) {
-        final String finalTransformation = null != transformation ? transformation : key.getAlgorithm();
-        return new Symmetric(finalTransformation, key);
+    public static Crypt getSymmetric(final String transformation, final SecretKey secretKey) {
+        return getSymmetric(transformation, secretKey, null);
+    }
+
+    /**
+     * Creates a symmetric crypt.
+     *
+     * @param secretKey              the secret key
+     * @param algorithmParameterSpec the specification of cryptographic parameters
+     * @return the symmetric crypt object
+     * @since 1.0.8
+     */
+    public static Crypt getSymmetric(final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
+        return getSymmetric(null, secretKey, algorithmParameterSpec);
+    }
+
+    /**
+     * Creates a symmetric crypt.
+     *
+     * @param transformation         the name of transformation
+     * @param secretKey              the secret key
+     * @param algorithmParameterSpec the specification of cryptographic parameters
+     * @return the symmetric crypt object
+     * @since 1.0.8
+     */
+    public static Crypt getSymmetric(final String transformation, final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
+        return new Symmetric(transformation, secretKey, algorithmParameterSpec);
     }
 
     /**
@@ -529,7 +611,32 @@ public abstract class Crypt {
      * @return the asymmetric crypt object
      */
     public static Crypt getAsymmetric(final String transformation, final KeyPair key) {
-        return new Asymmetric(transformation, key);
+        return getAsymmetric(transformation, key, null);
+    }
+
+    /**
+     * Creates a asymmetric crypt.
+     *
+     * @param key                    the key pair
+     * @param algorithmParameterSpec the specification of cryptographic parameters
+     * @return the asymmetric crypt object
+     * @since 1.0.8
+     */
+    public static Crypt getAsymmetric(final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
+        return getAsymmetric(null, key, algorithmParameterSpec);
+    }
+
+    /**
+     * Creates a asymmetric crypt.
+     *
+     * @param transformation         the name of transformation
+     * @param key                    the key pair
+     * @param algorithmParameterSpec the specification of cryptographic parameters
+     * @return the asymmetric crypt object
+     * @since 1.0.8
+     */
+    public static Crypt getAsymmetric(final String transformation, final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
+        return new Asymmetric(transformation, key, algorithmParameterSpec);
     }
 
     /* ********************************************
