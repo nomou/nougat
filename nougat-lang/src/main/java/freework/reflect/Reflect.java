@@ -283,7 +283,7 @@ public class Reflect {
     /**
      * Gets the field of wrapped object.
      *
-     * @param the name of field
+     * @param field the name of field
      * @return the reflect for field
      */
     public Reflect field(final String field) {
