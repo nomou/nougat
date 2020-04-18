@@ -1,2 +1,7 @@
-# 1.0.8
+# 1.0.9
+1. freework.crypto.cipher.Crypt 修正为加密使用公钥, 解密使用私钥.
+2. freework.crypto.cipher.Crypt 生成的公钥默认使用X509EncodedKeySpec, 生成的私钥默认使用PKCS8EncodedKeySpec.
+3. freework.crypto.cipher.Crypt 处理RSA"Data must not be longer than 117 bytes"问题.
+
+# 1.0.9
 1. freework.crypto.cipher.Crypt 增加算法参数支持.

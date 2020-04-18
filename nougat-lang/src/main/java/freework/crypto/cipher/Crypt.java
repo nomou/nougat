@@ -1,37 +1,19 @@
 package freework.crypto.cipher;
 
 import freework.codec.Base64;
+import freework.codec.Hex;
 import freework.util.Bytes;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherInputStream;
-import javax.crypto.CipherOutputStream;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
+import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPrivateKeySpec;
-import java.security.spec.RSAPublicKeySpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.*;
+import java.security.interfaces.RSAKey;
+import java.security.spec.*;
 import java.util.Arrays;
 
 /**
@@ -248,7 +230,27 @@ public abstract class Crypt {
                                    final AlgorithmParameterSpec params, final SecureRandom random, final byte[] bytes)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException,
             InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
-        return this.instantiateCipher(transformation, opmode, key, params, random).doFinal(bytes);
+        final Cipher cipher = this.instantiateCipher(transformation, opmode, key, params, random);
+
+        /*-
+         * FIXED RSA "Data must not be longer than 117 bytes".
+         */
+        if (key instanceof RSAKey && (Cipher.ENCRYPT_MODE == opmode || Cipher.DECRYPT_MODE == opmode)) {
+            try {
+                final int modulusBits = ((RSAKey) key).getModulus().bitLength();
+                final int maxBlockSize = Cipher.ENCRYPT_MODE == opmode ? modulusBits / 8 - 11 : modulusBits / 8;
+                final ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.round(bytes.length * 1.2f));
+                final int length = bytes.length;
+                for (int i = 0; i < length; i += maxBlockSize) {
+                    buffer.write(cipher.doFinal(bytes, i, i < length - maxBlockSize ? maxBlockSize : length - i));
+                }
+                return buffer.toByteArray();
+            } catch (final IOException ex) {
+                throw new IllegalStateException(ex);
+            }
+        } else {
+            return cipher.doFinal();
+        }
     }
 
     /**
@@ -491,13 +493,13 @@ public abstract class Crypt {
          * @return the encrypt/decrypt key
          */
         private Key getRequiredKey(final int opmode) {
-            if (Cipher.ENCRYPT_MODE == opmode) {
+            if (Cipher.DECRYPT_MODE == opmode) {
                 final PrivateKey privateKey = key.getPrivate();
                 if (null == privateKey) {
                     throw new IllegalStateException("private key is not configure");
                 }
                 return privateKey;
-            } else if (Cipher.DECRYPT_MODE == opmode) {
+            } else if (Cipher.ENCRYPT_MODE == opmode) {
                 final PublicKey publicKey = key.getPublic();
                 if (null == publicKey) {
                     throw new IllegalStateException("public key is not configure");
@@ -550,7 +552,7 @@ public abstract class Crypt {
      * @param secretKey              the secret key
      * @param algorithmParameterSpec the specification of cryptographic parameters
      * @return the symmetric crypt object
-     * @since 1.0.8
+     * @since 1.0.9
      */
     public static Crypt getSymmetric(final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
         return getSymmetric(null, secretKey, algorithmParameterSpec);
@@ -563,7 +565,7 @@ public abstract class Crypt {
      * @param secretKey              the secret key
      * @param algorithmParameterSpec the specification of cryptographic parameters
      * @return the symmetric crypt object
-     * @since 1.0.8
+     * @since 1.0.9
      */
     public static Crypt getSymmetric(final String transformation, final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
         return new Symmetric(transformation, secretKey, algorithmParameterSpec);
@@ -620,7 +622,7 @@ public abstract class Crypt {
      * @param key                    the key pair
      * @param algorithmParameterSpec the specification of cryptographic parameters
      * @return the asymmetric crypt object
-     * @since 1.0.8
+     * @since 1.0.9
      */
     public static Crypt getAsymmetric(final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
         return getAsymmetric(null, key, algorithmParameterSpec);
@@ -633,7 +635,7 @@ public abstract class Crypt {
      * @param key                    the key pair
      * @param algorithmParameterSpec the specification of cryptographic parameters
      * @return the asymmetric crypt object
-     * @since 1.0.8
+     * @since 1.0.9
      */
     public static Crypt getAsymmetric(final String transformation, final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
         return new Asymmetric(transformation, key, algorithmParameterSpec);
@@ -679,7 +681,11 @@ public abstract class Crypt {
     public static KeyPair newAsymmetricKey(final String transformation) {
         try {
             final String algorithm = getAlgorithm(transformation);
-            return KeyPairGenerator.getInstance(algorithm).generateKeyPair();
+            final KeyPair keyPair = KeyPairGenerator.getInstance(algorithm).generateKeyPair();
+            return new KeyPair(
+                    toX509EncodedPublicKey(keyPair.getPublic()),
+                    toPkcs8EncodedPrivateKey(keyPair.getPrivate())
+            );
         } catch (final NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
@@ -715,12 +721,7 @@ public abstract class Crypt {
             final String algorithm = getAlgorithm(transformation);
             final KeyFactory factory = KeyFactory.getInstance(algorithm);
             if (null != encodedPublicKey && 0 < encodedPublicKey.length) {
-                /* new X509EncodedKeySpec(encodedPublicKey); */
-                if ("RSA".equals(algorithm)) {
-                    publicKey = factory.generatePublic(new X509EncodedKeySpec(encodedPublicKey));
-                } else {
-                    publicKey = factory.generatePublic(new PKCS8EncodedKeySpec(encodedPublicKey));
-                }
+                publicKey = factory.generatePublic(new X509EncodedKeySpec(encodedPublicKey));
             }
             if (null != encodedPrivateKey && 0 < encodedPrivateKey.length) {
                 privateKey = factory.generatePrivate(new PKCS8EncodedKeySpec(encodedPrivateKey));
@@ -729,11 +730,35 @@ public abstract class Crypt {
                 throw new IllegalArgumentException("public key and private key must be specify at least one");
             }
             return new KeyPair(publicKey, privateKey);
-        } catch (final InvalidKeySpecException e) {
-            throw new IllegalArgumentException(e);
-        } catch (final NoSuchAlgorithmException e) {
+        } catch (final Exception e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private static PublicKey toX509EncodedPublicKey(final PublicKey publicKey) {
+        PublicKey x509PublicKey = publicKey;
+        try {
+            if (!(publicKey instanceof X509EncodedKeySpec)) {
+                final KeyFactory factory = KeyFactory.getInstance(publicKey.getAlgorithm());
+                x509PublicKey = factory.generatePublic(new X509EncodedKeySpec(publicKey.getEncoded()));
+            }
+        } catch (final Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+        return x509PublicKey;
+    }
+
+    private static PrivateKey toPkcs8EncodedPrivateKey(final PrivateKey privateKey) {
+        PrivateKey pkcs8PrivateKey = privateKey;
+        try {
+            if (!(privateKey instanceof PKCS8EncodedKeySpec)) {
+                final KeyFactory factory = KeyFactory.getInstance(privateKey.getAlgorithm());
+                pkcs8PrivateKey = factory.generatePrivate(new PKCS8EncodedKeySpec(privateKey.getEncoded()));
+            }
+        } catch (final Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+        return pkcs8PrivateKey;
     }
 
     /**
@@ -751,19 +776,17 @@ public abstract class Crypt {
             final KeyFactory factory = KeyFactory.getInstance("RSA");
             if (null != publicExponent) {
                 final KeySpec keySpec = new RSAPublicKeySpec(modulus, publicExponent);
-                publicKey = factory.generatePublic(keySpec);
+                publicKey = toX509EncodedPublicKey(factory.generatePublic(keySpec));
             }
             if (null != privateExponent) {
                 final KeySpec keySpec = new RSAPrivateKeySpec(modulus, privateExponent);
-                privateKey = factory.generatePrivate(keySpec);
+                privateKey = toPkcs8EncodedPrivateKey(factory.generatePrivate(keySpec));
             }
             if (null == publicKey && null == privateKey) {
                 throw new IllegalArgumentException("public key and private key must be specify at least one");
             }
             return new KeyPair(publicKey, privateKey);
-        } catch (final NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException(e);
-        } catch (final InvalidKeySpecException e) {
+        } catch (final Exception e) {
             throw new IllegalArgumentException(e);
         }
     }
