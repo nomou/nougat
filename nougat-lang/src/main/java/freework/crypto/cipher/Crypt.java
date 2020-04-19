@@ -234,8 +234,10 @@ public abstract class Crypt {
 
         /*-
          * FIXED RSA "Data must not be longer than 117 bytes".
-         * encrypt: max_block_size = number_of_bits / 8 - 11
-         * decrypt: max_block_size = number_of_bits / 8.
+         * encrypt: max_block_size = number_of_key_bits / 8 - number_of_padding(PKCS#1 = 11)
+         * decrypt: max_block_size = number_of_Key_bits / 8.
+         * eg:
+          * 1024 bits key encrypt, max_block_size = 1024 / 8 - 11 = 117
          */
         if (key instanceof RSAKey && (Cipher.ENCRYPT_MODE == opmode || Cipher.DECRYPT_MODE == opmode)) {
             try {
