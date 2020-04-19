@@ -234,12 +234,15 @@ public abstract class Crypt {
 
         /*-
          * FIXED RSA "Data must not be longer than 117 bytes".
+         * encrypt: max_block_size = number_of_bits / 8 - 11
+         * decrypt: max_block_size = number_of_bits / 8.
          */
         if (key instanceof RSAKey && (Cipher.ENCRYPT_MODE == opmode || Cipher.DECRYPT_MODE == opmode)) {
             try {
                 final int modulusBits = ((RSAKey) key).getModulus().bitLength();
                 final int maxBlockSize = Cipher.ENCRYPT_MODE == opmode ? modulusBits / 8 - 11 : modulusBits / 8;
-                final ByteArrayOutputStream buffer = new ByteArrayOutputStream(Math.round(bytes.length * 1.2f));
+                final int resultLength = (int) Math.ceil(1F * bytes.length / maxBlockSize) / 8 * modulusBits;
+                final ByteArrayOutputStream buffer = new ByteArrayOutputStream(resultLength);
                 final int length = bytes.length;
                 for (int i = 0; i < length; i += maxBlockSize) {
                     buffer.write(cipher.doFinal(bytes, i, i < length - maxBlockSize ? maxBlockSize : length - i));
