@@ -254,7 +254,7 @@ public abstract class Crypt {
                 throw new IllegalStateException(ex);
             }
         } else {
-            return cipher.doFinal();
+            return cipher.doFinal(bytes);
         }
     }
 
