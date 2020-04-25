@@ -113,7 +113,7 @@ public class Reflect {
             throw new IllegalStateException("Field not found: " + field + " in " + getType());
         }
         try {
-            return wrap(f.<Field>get().get(target));
+            return wrap(accessible(f.<Field>get()).get(target));
         } catch (final IllegalAccessException ex) {
             return handleReflectionException(ex);
         }
@@ -132,7 +132,7 @@ public class Reflect {
             throw new IllegalStateException("Field not found: " + field + field + " in " + getType());
         }
         try {
-            (f.<Field>get()).set(target, value);
+            accessible(f.<Field>get()).set(target, value);
         } catch (final IllegalAccessException ex) {
             handleReflectionException(ex);
         }
@@ -206,7 +206,7 @@ public class Reflect {
             if (!ctor.isPresent()) {
                 throw new IllegalStateException("target is not present: " + target);
             }
-            instance = doInvoke(ctor.<Constructor<?>>get(), args);
+            instance = doInvoke(accessible(ctor.<Constructor<?>>get()), args);
         }
         return wrap(instance);
     }
@@ -253,7 +253,7 @@ public class Reflect {
         if (!invoker.isPresent()) {
             throw new IllegalStateException("Method not found: " + method);
         }
-        return wrap(doInvoke(invoker.<Method>get(), target, args));
+        return wrap(doInvoke(accessible(invoker.<Method>get()), target, args));
     }
 
     /* ********************************
@@ -365,13 +365,6 @@ public class Reflect {
         if (null == accessible) {
             return null;
         }
-        if (accessible instanceof Member) {
-            final Member member = (Member) accessible;
-            if (Modifier.isPublic(member.getModifiers()) &&
-                    Modifier.isPublic(member.getDeclaringClass().getModifiers())) {
-                return accessible;
-            }
-        }
         if (!accessible.isAccessible()) {
             accessible.setAccessible(true);
         }
@@ -402,7 +395,7 @@ public class Reflect {
         } catch (final NoSuchFieldException e) {
             do {
                 try {
-                    return accessible(clazz.getDeclaredField(name));
+                    return clazz.getDeclaredField(name);
                 } catch (NoSuchFieldException e1) {
                     exception = null != exception ? exception : e1;
                 }
@@ -435,7 +428,7 @@ public class Reflect {
         } catch (final NoSuchMethodException e) {
             try {
                 constructors = (Constructor<T>[]) clazz.getDeclaredConstructors();
-                return accessible(constructor(constructors, argumentTypes));
+                return constructor(constructors, argumentTypes);
             } catch (final NoSuchMethodException ex) {
                 return handleReflectionException(ex);
             }
@@ -463,7 +456,7 @@ public class Reflect {
             do {
                 try {
                     methods = clazz.getDeclaredMethods();
-                    return accessible(method(methods, method, argumentTypes));
+                    return method(methods, method, argumentTypes);
                 } catch (NoSuchMethodException e1) {
                     if (null == exception) {
                         exception = e1;
