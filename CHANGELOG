@@ -1,8 +1,6 @@
-# 1.0.12
-1. 调整 Http post 方法对 params 处理为默认 url encode.
-
 # 1.0.11
 1. 调整 Reflect 对 public final 也进行 accessible 判断.
+2. 调整 Http post 方法对 params 处理为默认 url encode.
 
 # 1.0.10
 1. 修复上个版本因为处理 RSA 而引起的加密没有处理原始内容问题
