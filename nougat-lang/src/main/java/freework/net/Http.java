@@ -129,6 +129,9 @@ public abstract class Http {
 
     /**
      * Posts 'application/x-www-form-urlencoded' data to http connection.
+     * <p>
+     * Note: Parameters will be automatically encoded since 1.0.11
+     * </p>
      *
      * @param httpUrlConnection the http connection
      * @param params            the form data
@@ -138,12 +141,15 @@ public abstract class Http {
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final String... params) throws IOException {
         final String charset = UTF_8.name();
         final String ctype = "application/x-www-form-urlencoded;charset=" + charset;
-        final String requestBody = buildRawQuery(params);
+        final String requestBody = buildQuery(charset, params);
         return post(httpUrlConnection, ctype, requestBody);
     }
 
     /**
      * Posts 'application/x-www-form-urlencoded' data to http connection.
+     * <p>
+     * Note: Parameters will be automatically encoded since 1.0.11
+     * </p>
      *
      * @param httpUrlConnection the http connection
      * @param params            the form data
@@ -153,7 +159,7 @@ public abstract class Http {
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final Map<String, String> params) throws IOException {
         final String charset = UTF_8.name();
         final String ctype = "application/x-www-form-urlencoded;charset=" + charset;
-        final String requestBody = buildRawQuery(params);
+        final String requestBody = buildQuery(charset, params);
         return post(httpUrlConnection, ctype, requestBody);
     }
 
