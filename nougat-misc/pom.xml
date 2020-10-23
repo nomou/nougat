@@ -20,7 +20,7 @@
 
         <!-- JSR 349 Bean Validation 1.1 (spring 4 支持, spring 3 支持 JSR 303 BeanValidation 1.0) -->
         <bean.validation.version>1.1.0.Final</bean.validation.version>
-        <hibernate.validator.version>5.0.1.Final</hibernate.validator.version>
+        <hibernate.validator.version>5.3.5.Final</hibernate.validator.version>
         <el.version>2.2.4</el.version>
     </properties>
 
