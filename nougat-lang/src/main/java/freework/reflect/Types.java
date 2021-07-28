@@ -6,6 +6,7 @@
 package freework.reflect;
 
 import java.lang.reflect.*;
+import java.util.Arrays;
 
 /**
  * Utilities of Type.
@@ -331,7 +332,7 @@ public abstract class Types {
     private static Type matches(final TypeVariable<?> typeVariable, final Class<?> declaringClass, final Type[] resolvedTypeArguments) {
         final TypeVariable<? extends Class<?>>[] declaredTypeVariables = declaringClass.getTypeParameters();
         if (declaredTypeVariables.length != resolvedTypeArguments.length) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(String.format("declared type variables length %s != resolved type arguments length %s on declaring class: %s", Arrays.toString(declaredTypeVariables), Arrays.toString(resolvedTypeArguments), declaringClass));
         }
         for (int i = 0; i < declaredTypeVariables.length; i++) {
             if (declaredTypeVariables[i] == typeVariable) {
