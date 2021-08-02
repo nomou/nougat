@@ -101,7 +101,7 @@
         <cglib.version>3.1</cglib.version>
         <asm.version>3.3.1</asm.version>
         <slf4j.version>1.7.6</slf4j.version>
-        <antisamy.version>1.5.3</antisamy.version>
+        <antisamy.version>1.6.4</antisamy.version>
         <spring.version>4.1.4.RELEASE</spring.version>
 
         <!-- plugin versions [[ -->
