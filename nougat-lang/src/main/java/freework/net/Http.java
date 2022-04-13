@@ -404,13 +404,14 @@ public abstract class Http {
     /**
      * Splits query string to map.
      *
-     * @param query   the query string
-     * @param charset the url encode encoding, not decode if null
+     * @param queryOrUrl the query string or url
+     * @param charset    the url encode encoding, not decode if null
      * @return the name-value pairs
      */
-    public static Map<String, String> splitQuery(final String query, final String charset) {
+    public static Map<String, String> splitQuery(final String queryOrUrl, final String charset) {
+        final String queryToUse = queryOrUrl.substring(queryOrUrl.indexOf("?") + 1);
         final Map<String, String> result = new HashMap<String, String>(15);
-        final String[] pairs = query.split("&");
+        final String[] pairs = queryToUse.split("&");
         if (pairs.length > 0) {
             for (final String pair : pairs) {
                 final String[] param = pair.split("=", 2);
@@ -906,7 +907,7 @@ public abstract class Http {
     public static HttpURLConnection open(final URL serverUrl) throws IOException {
         // The ssl protocol version uses the JDK default.
         try {
-            return open(serverUrl, ANY_HOSTNAME_VERIFIER, getInsecureSSLSocketFactory("TLS"));
+            return open(serverUrl, ANY_HOSTNAME_VERIFIER, createInsecureSSLSocketFactory("TLS"));
         } catch (final NoSuchAlgorithmException e) {
             throw new IOException("establish insecure connection fail, algorithm error: " + e.getMessage(), e);
         } catch (final KeyManagementException e) {
@@ -921,7 +922,7 @@ public abstract class Http {
      * @return SSL socket factory
      * @since 1.0.13
      */
-    public static SSLSocketFactory getInsecureSSLSocketFactory(final String protocol)
+    public static SSLSocketFactory createInsecureSSLSocketFactory(final String protocol)
             throws NoSuchAlgorithmException, KeyManagementException {
         final TrustManager[] trustManagers = new TrustManager[]{TRUST_ALL_TRUST_MANAGER};
         final SSLContext context = SSLContext.getInstance(protocol);

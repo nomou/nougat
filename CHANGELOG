@@ -2,6 +2,7 @@
 1. Http 标记原 open 方法过时
 2. 增加 可以指定 HostnameVerifier, SSLSocketFactory 的 open 方法 及 getInsecureSSLSocketFactory 方法.
 3. 新 open 方法移除默认添加 Host、User-Agent, Connection 的逻辑.
+4. Http.splitQuery() 支持传递URL
 
 # 1.0.12
 1. Types 错误信息调整
