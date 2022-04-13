@@ -108,7 +108,7 @@ public abstract class Http {
      * @param params    the form data
      * @return the http connection
      * @throws IOException if an I/O error occurs
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static HttpURLConnection get(final String serverUrl, final Map<String, String> params) throws IOException {
         return get(urlAppend(serverUrl, UTF_8.name(), params));
@@ -168,7 +168,7 @@ public abstract class Http {
      * @param httpUrlConnection the http connection
      * @return the http connection
      * @throws IOException if an I/O error occurs
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static HttpURLConnection get(final HttpURLConnection httpUrlConnection) throws IOException {
         httpUrlConnection.setRequestMethod(GET);
@@ -268,6 +268,8 @@ public abstract class Http {
 
         httpUrlConnection.setRequestMethod(POST);
         httpUrlConnection.setRequestProperty("Content-Type", ctype);
+
+        httpUrlConnection.setDoOutput(true);
         return new Multipart(httpUrlConnection, boundary, charset);
     }
 
@@ -317,7 +319,7 @@ public abstract class Http {
      * @param charset   the url encode encoding
      * @param params    the query name-value pairs
      * @return the http get url
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static String urlAppend(final String serverUrl, final String charset, final Map<String, String> params) {
         final String query = buildQuery((null != charset ? charset : UTF_8.name()), params);
@@ -887,7 +889,7 @@ public abstract class Http {
      * @return HttpURLConnection/HttpsURLConnection instance
      * @see #open(URL)
      * @see #open(String, HostnameVerifier, SSLSocketFactory)
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static HttpURLConnection open(final String serverUrl) throws IOException {
         return open(new URL(serverUrl));
@@ -902,7 +904,7 @@ public abstract class Http {
      * @param serverUrl server url
      * @return HttpURLConnection/HttpsURLConnection instance
      * @see #open(URL, HostnameVerifier, SSLSocketFactory)
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static HttpURLConnection open(final URL serverUrl) throws IOException {
         // The ssl protocol version uses the JDK default.
@@ -920,7 +922,7 @@ public abstract class Http {
      *
      * @param protocol protocol
      * @return SSL socket factory
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static SSLSocketFactory createInsecureSSLSocketFactory(final String protocol)
             throws NoSuchAlgorithmException, KeyManagementException {
@@ -940,7 +942,7 @@ public abstract class Http {
      * @param sslSocketFactory ssl socket factory for https
      * @return HttpURLConnection/HttpsURLConnection instance
      * @throws IOException if an I/O error occurs
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static HttpURLConnection open(final String serverUrl,
                                          final HostnameVerifier hostnameVerifier,
@@ -963,7 +965,7 @@ public abstract class Http {
      * @param sslSocketFactory ssl socket factory for https
      * @return HttpURLConnection/HttpsURLConnection instance
      * @throws IOException if an I/O error occurs
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static HttpURLConnection open(final URL serverUrl,
                                          final HostnameVerifier hostnameVerifier,
@@ -1113,7 +1115,7 @@ public abstract class Http {
     }
 
     /**
-     * @since 1.0.13
+     * @since 1.0.14
      */
     public static final HostnameVerifier ANY_HOSTNAME_VERIFIER = new HostnameVerifier() {
         @Override
