@@ -16,6 +16,8 @@ import java.lang.reflect.Field;
 import java.net.*;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -48,6 +50,16 @@ public abstract class Http {
     private static final String HTTPS = "https";
 
     /**
+     * 'GET'.
+     */
+    private static final String GET = "GET";
+
+    /**
+     * 'POST'.
+     */
+    private static final String POST = "POST";
+
+    /**
      * The 'Set-Cookie' response header.
      */
     private static final String SET_COOKIE = "Set-Cookie";
@@ -59,9 +71,11 @@ public abstract class Http {
 
     /**
      * The default user agent.
+     *
+     * @deprecated
      */
+    @Deprecated
     private static final String DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36";
-
 
     /**
      * Non-instantiate.
@@ -71,6 +85,9 @@ public abstract class Http {
 
     /**
      * Opens the http connection using given server url and params.
+     * <p>
+     * <b>WARN: it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * </p>
      *
      * @param serverUrl the http server url
      * @param params    the form data
@@ -78,15 +95,30 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection get(final String serverUrl, final String... params) throws IOException {
-        final String finalUrl = urlAppend(serverUrl, UTF_8.name(), params);
-        final HttpURLConnection httpUrlConnection = open(finalUrl, "GET");
+        return get(open(urlAppend(serverUrl, UTF_8.name(), params)));
+    }
 
-        httpUrlConnection.setDoOutput(false);
-        return httpUrlConnection;
+    /**
+     * Opens the http connection using given server url and params.
+     * <p>
+     * <b>WARN: it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * </p>
+     *
+     * @param serverUrl the http server url
+     * @param params    the form data
+     * @return the http connection
+     * @throws IOException if an I/O error occurs
+     * @since 1.0.13
+     */
+    public static HttpURLConnection get(final String serverUrl, final Map<String, String> params) throws IOException {
+        return get(urlAppend(serverUrl, UTF_8.name(), params));
     }
 
     /**
      * Posts 'application/x-www-form-urlencoded' data to http connection.
+     * <p>
+     * <b>WARN: it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * </p>
      *
      * @param serverUrl the http server url
      * @param params    the form data
@@ -94,12 +126,14 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection post(final String serverUrl, final String... params) throws IOException {
-        final HttpURLConnection httpUrlConnection = open(serverUrl, "POST");
-        return post(httpUrlConnection, params);
+        return post(open(serverUrl), params);
     }
 
     /**
      * Posts 'application/x-www-form-urlencoded' data to http connection.
+     * <p>
+     * <b>WARN: it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * </p>
      *
      * @param serverUrl the http server url
      * @param params    the form data
@@ -107,12 +141,14 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection post(final String serverUrl, final Map<String, String> params) throws IOException {
-        final HttpURLConnection httpUrlConnection = open(serverUrl, "POST");
-        return post(httpUrlConnection, params);
+        return post(open(serverUrl), params);
     }
 
     /**
      * Posts data to http connection.
+     * <p>
+     * <b>WARN: it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * </p>
      *
      * @param serverUrl the http server url
      * @param ctype     the Content-Type
@@ -121,11 +157,24 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection post(final String serverUrl, final String ctype, final String body) throws IOException {
-        final HttpURLConnection httpUrlConnection = open(serverUrl, "POST");
-        return post(httpUrlConnection, ctype, body);
+        return post(open(serverUrl), ctype, body);
     }
 
     /* ************ */
+
+    /**
+     * set http connection request 'GET' method.
+     *
+     * @param httpUrlConnection the http connection
+     * @return the http connection
+     * @throws IOException if an I/O error occurs
+     * @since 1.0.13
+     */
+    public static HttpURLConnection get(final HttpURLConnection httpUrlConnection) throws IOException {
+        httpUrlConnection.setRequestMethod(GET);
+        httpUrlConnection.setDoOutput(false);
+        return httpUrlConnection;
+    }
 
     /**
      * Posts 'application/x-www-form-urlencoded' data to http connection.
@@ -172,9 +221,7 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final JsonStructure json) throws IOException {
-        final String charset = "UTF-8";
-        final String ctype = "application/json;charset=" + charset;
-        return post(httpUrlConnection, ctype, json.toString());
+        return post(httpUrlConnection, "application/json;charset=UTF-8", json.toString());
     }
 
 
@@ -190,7 +237,7 @@ public abstract class Http {
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final String ctype, final String body) throws IOException {
         final Charset charset = determineCharset(ctype, UTF_8);
 
-        httpUrlConnection.setRequestMethod("POST");
+        httpUrlConnection.setRequestMethod(POST);
         httpUrlConnection.setRequestProperty("Content-Type", ctype);
 
         httpUrlConnection.setDoOutput(true);
@@ -204,7 +251,7 @@ public abstract class Http {
      * @param httpUrlConnection the http connection
      * @return the multipart object
      */
-    public static Multipart postMultipart(final HttpURLConnection httpUrlConnection) {
+    public static Multipart postMultipart(final HttpURLConnection httpUrlConnection) throws IOException {
         return postMultipart(httpUrlConnection, UTF_8);
     }
 
@@ -215,10 +262,11 @@ public abstract class Http {
      * @param charset           the charset
      * @return the multipart object
      */
-    public static Multipart postMultipart(final HttpURLConnection httpUrlConnection, final Charset charset) {
+    public static Multipart postMultipart(final HttpURLConnection httpUrlConnection, final Charset charset) throws IOException {
         final String boundary = "----WebKitFormBoundary_" + System.nanoTime();
         final String ctype = "multipart/form-data;charset=" + charset + ";boundary=" + boundary;
 
+        httpUrlConnection.setRequestMethod(POST);
         httpUrlConnection.setRequestProperty("Content-Type", ctype);
         return new Multipart(httpUrlConnection, boundary, charset);
     }
@@ -258,6 +306,20 @@ public abstract class Http {
      * @return the http get url
      */
     public static String urlAppend(final String serverUrl, final String charset, final String... params) {
+        final String query = buildQuery((null != charset ? charset : UTF_8.name()), params);
+        return serverUrl + (-1 < serverUrl.indexOf('?') ? '&' : '?') + query;
+    }
+
+    /**
+     * Builds http 'GET' url using given params.
+     *
+     * @param serverUrl the server url
+     * @param charset   the url encode encoding
+     * @param params    the query name-value pairs
+     * @return the http get url
+     * @since 1.0.13
+     */
+    public static String urlAppend(final String serverUrl, final String charset, final Map<String, String> params) {
         final String query = buildQuery((null != charset ? charset : UTF_8.name()), params);
         return serverUrl + (-1 < serverUrl.indexOf('?') ? '&' : '?') + query;
     }
@@ -373,7 +435,11 @@ public abstract class Http {
      */
     public static String urlEncode(final String text, final String enc) throws UnsupportedCharsetException {
         try {
-            return null != text ? URLEncoder.encode(text, enc).replace("%21", "!") : null;
+            /*-
+             * encodeURIComponent('!') -> '!'
+             * encodeURIComponent('+') -> '%20'
+             */
+            return null != text ? URLEncoder.encode(text, enc).replace("%21", "!").replace("+", "%20") : null;
         } catch (final UnsupportedEncodingException e) {
             throw new UnsupportedCharsetException(enc);
         }
@@ -562,7 +628,7 @@ public abstract class Http {
      *
      * @param httpUrlConnection the http url connection.
      * @return the applicable cookies.
-     * @see java.net.CookieManager#put(java.net.URI, Map)
+     * @see CookieManager#put(URI, Map)
      */
     @SuppressWarnings("PMD.AvoidComplexConditionRule")
     public static List<HttpCookie> getResponseCookies(final HttpURLConnection httpUrlConnection) {
@@ -629,7 +695,7 @@ public abstract class Http {
      * @param httpUrlConnection the http url connection.
      * @param candidates        the cookie candidates.
      * @return the (possibly empty) list of invalid cookies.
-     * @see java.net.CookieHandler#put(java.net.URI, Map)
+     * @see CookieHandler#put(URI, Map)
      */
     @SuppressWarnings("PMD.AvoidComplexConditionRule")
     public static Set<HttpCookie> addRequestCookies(final HttpURLConnection httpUrlConnection, final Set<HttpCookie> candidates) {
@@ -732,6 +798,7 @@ public abstract class Http {
         return HttpCookie.parse(header);
     }
 
+
     /* *********************************************
      *             http connection methods.
      * ******************************************* */
@@ -744,7 +811,10 @@ public abstract class Http {
      * @param keyManagers https key managers
      * @return HttpURLConnection/HttpsURLConnection instance
      * @throws IOException if an I/O error occurs
+     * @see #open(String, HostnameVerifier, SSLSocketFactory)
+     * @deprecated the ssl protocol version uses the JDK default value, the parameter is unnecessary if you want to modify it
      */
+    @Deprecated
     public static HttpURLConnection open(final String serverUrl, final String method,
                                          final KeyManager... keyManagers) throws IOException {
         return open(new URL(serverUrl), method, keyManagers, new TrustManager[]{TRUST_ALL_TRUST_MANAGER});
@@ -758,7 +828,10 @@ public abstract class Http {
      * @param trustManagers https trust managers
      * @return HttpURLConnection/HttpsURLConnection instance
      * @throws IOException if an I/O error occurs
+     * @see #open(String, HostnameVerifier, SSLSocketFactory)
+     * @deprecated the ssl protocol version uses the JDK default value, the parameter is unnecessary if you want to modify it
      */
+    @Deprecated
     public static HttpURLConnection open(final String serverUrl, final String method,
                                          final TrustManager[] trustManagers) throws IOException {
         return open(new URL(serverUrl), method, null, trustManagers);
@@ -773,7 +846,10 @@ public abstract class Http {
      * @param trustManagers https trust managers
      * @return HttpURLConnection/HttpsURLConnection instance
      * @throws IOException if an I/O error occurs
+     * @see #open(URL, HostnameVerifier, SSLSocketFactory)
+     * @deprecated the ssl protocol version uses the JDK default value, the parameter is unnecessary if you want to modify it
      */
+    @Deprecated
     public static HttpURLConnection open(final URL serverUrl, final String method,
                                          final KeyManager[] keyManagers, final TrustManager[] trustManagers) throws IOException {
         final HttpURLConnection httpUrlConnection = (HttpURLConnection) serverUrl.openConnection();
@@ -786,12 +862,7 @@ public abstract class Http {
                 context.init(keyManagers, trustManagers, new SecureRandom());
 
                 httpsUrlConnection.setSSLSocketFactory(context.getSocketFactory());
-                httpsUrlConnection.setHostnameVerifier(new HostnameVerifier() {
-                    @Override
-                    public boolean verify(final String hostname, final SSLSession session) {
-                        return true;
-                    }
-                });
+                httpsUrlConnection.setHostnameVerifier(ANY_HOSTNAME_VERIFIER);
             }
         } catch (final Exception e) {
             close(httpUrlConnection);
@@ -802,6 +873,110 @@ public abstract class Http {
         httpUrlConnection.setRequestProperty("Host", serverUrl.getHost());
         httpUrlConnection.setRequestProperty("User-Agent", DEFAULT_USER_AGENT);
         httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
+        return httpUrlConnection;
+    }
+
+    /**
+     * Open the server url, <b>it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * <p>
+     * The ssl protocol version uses the JDK default, if you want to specify it, you can use #open(String, HostnameVerifier, SSLSocketFactory).
+     * </p>
+     *
+     * @param serverUrl server url
+     * @return HttpURLConnection/HttpsURLConnection instance
+     * @see #open(URL)
+     * @see #open(String, HostnameVerifier, SSLSocketFactory)
+     * @since 1.0.13
+     */
+    public static HttpURLConnection open(final String serverUrl) throws IOException {
+        return open(new URL(serverUrl));
+    }
+
+    /**
+     * Open the server url, <b>it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * <p>
+     * The ssl protocol version uses the JDK default, if you want to specify it, you can use #open(URL, HostnameVerifier, SSLSocketFactory).
+     * </p>
+     *
+     * @param serverUrl server url
+     * @return HttpURLConnection/HttpsURLConnection instance
+     * @see #open(URL, HostnameVerifier, SSLSocketFactory)
+     * @since 1.0.13
+     */
+    public static HttpURLConnection open(final URL serverUrl) throws IOException {
+        // The ssl protocol version uses the JDK default.
+        try {
+            return open(serverUrl, ANY_HOSTNAME_VERIFIER, getInsecureSSLSocketFactory("TLS"));
+        } catch (final NoSuchAlgorithmException e) {
+            throw new IOException("establish insecure connection fail, algorithm error: " + e.getMessage(), e);
+        } catch (final KeyManagementException e) {
+            throw new IOException("establish insecure connection fail, key management error: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Create an insecure SSL socket factory that allows insecure connections (trust any hostname and certificate).
+     *
+     * @param protocol protocol
+     * @return SSL socket factory
+     * @since 1.0.13
+     */
+    public static SSLSocketFactory getInsecureSSLSocketFactory(final String protocol)
+            throws NoSuchAlgorithmException, KeyManagementException {
+        final TrustManager[] trustManagers = new TrustManager[]{TRUST_ALL_TRUST_MANAGER};
+        final SSLContext context = SSLContext.getInstance(protocol);
+        context.init(null, trustManagers, new SecureRandom());
+
+        return context.getSocketFactory();
+    }
+
+    /**
+     * Open the server url, return {@link HttpsURLConnection} if it is a https url, otherwise {@link HttpURLConnection}.
+     * Opening does not cause the socket to send data, which makes it possible to modify socket-related settings
+     *
+     * @param serverUrl        server url
+     * @param hostnameVerifier hostname verifier for https
+     * @param sslSocketFactory ssl socket factory for https
+     * @return HttpURLConnection/HttpsURLConnection instance
+     * @throws IOException if an I/O error occurs
+     * @since 1.0.13
+     */
+    public static HttpURLConnection open(final String serverUrl,
+                                         final HostnameVerifier hostnameVerifier,
+                                         final SSLSocketFactory sslSocketFactory) throws IOException {
+        return open(new URL(serverUrl), hostnameVerifier, sslSocketFactory);
+    }
+
+    /**
+     * Open the server url, return {@link HttpsURLConnection} if it is a https url, otherwise {@link HttpURLConnection}.
+     * Opening does not cause the socket to send data, which makes it possible to modify socket-related settings
+     * <pre>
+     * final SSLContext context = SSLContext.getInstance("TLS");
+     * context.init(keyManagers, trustManagers, new SecureRandom());
+     *
+     * open(new URL("https://...", null, context.getSocketFactory());
+     * </pre>
+     *
+     * @param serverUrl        server url
+     * @param hostnameVerifier hostname verifier for https
+     * @param sslSocketFactory ssl socket factory for https
+     * @return HttpURLConnection/HttpsURLConnection instance
+     * @throws IOException if an I/O error occurs
+     * @since 1.0.13
+     */
+    public static HttpURLConnection open(final URL serverUrl,
+                                         final HostnameVerifier hostnameVerifier,
+                                         final SSLSocketFactory sslSocketFactory) throws IOException {
+        final HttpURLConnection httpUrlConnection = (HttpURLConnection) serverUrl.openConnection();
+        if (httpUrlConnection instanceof HttpsURLConnection) {
+            final HttpsURLConnection httpsUrlConnection = (HttpsURLConnection) httpUrlConnection;
+            if (null != hostnameVerifier) {
+                httpsUrlConnection.setHostnameVerifier(hostnameVerifier);
+            }
+            if (null != sslSocketFactory) {
+                httpsUrlConnection.setSSLSocketFactory(sslSocketFactory);
+            }
+        }
         return httpUrlConnection;
     }
 
@@ -935,6 +1110,16 @@ public abstract class Http {
             return (header + "Content-Type:" + finalCtype + "\r\n\r\n");
         }
     }
+
+    /**
+     * @since 1.0.13
+     */
+    public static final HostnameVerifier ANY_HOSTNAME_VERIFIER = new HostnameVerifier() {
+        @Override
+        public boolean verify(final String hostname, final SSLSession session) {
+            return true;
+        }
+    };
 
     public static final X509TrustManager TRUST_ALL_TRUST_MANAGER = new X509TrustManager() {
         @Override

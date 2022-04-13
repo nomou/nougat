@@ -1,3 +1,7 @@
+# 1.0.13
+1. Http 标记原 open 方法过时
+2. 增加 可以指定 HostnameVerifier, SSLSocketFactory 的 open 方法 及 getInsecureSSLSocketFactory 方法.
+
 # 1.0.12
 1. Types 错误信息调整
 
