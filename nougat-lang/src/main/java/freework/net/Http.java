@@ -95,7 +95,7 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection get(final String serverUrl, final String... params) throws IOException {
-        return get(open(urlAppend(serverUrl, UTF_8.name(), params)));
+        return get(open(createUrl(serverUrl, params)));
     }
 
     /**
@@ -108,10 +108,10 @@ public abstract class Http {
      * @param params    the form data
      * @return the http connection
      * @throws IOException if an I/O error occurs
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static HttpURLConnection get(final String serverUrl, final Map<String, String> params) throws IOException {
-        return get(urlAppend(serverUrl, UTF_8.name(), params));
+        return get(createUrl(serverUrl, params));
     }
 
     /**
@@ -145,6 +145,38 @@ public abstract class Http {
     }
 
     /**
+     * Posts 'application/json' data to http connection.
+     *
+     * @param serverUrl the http server url
+     * @param json      the json data
+     * @return the http connection
+     * @throws IOException if an I/O error occurs
+     * @since 1.0.14
+     */
+    public static HttpURLConnection post(final String serverUrl, final JsonStructure json) throws IOException {
+        return post(open(serverUrl), json);
+    }
+
+    /**
+     * Posts data to http connection.
+     * <p>
+     * <b>WARN: it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
+     * </p>
+     *
+     * @param serverUrl the http server url
+     * @param ctype     the Content-Type
+     * @param body      the http request body
+     * @return the http connection
+     * @throws IOException if an I/O error occurs
+     * @see #postWithBody(String, String, String)
+     * @deprecated since 1.0.14, to avoid conflicts with other methods, refactor the method to "postWithBody" method
+     */
+    @Deprecated
+    public static HttpURLConnection post(final String serverUrl, final String ctype, final String body) throws IOException {
+        return postWithBody(serverUrl, ctype, body);
+    }
+
+    /**
      * Posts data to http connection.
      * <p>
      * <b>WARN: it will establish an insecure connection (trust any hostname and certificate) if the url schema is https</b>.
@@ -156,19 +188,19 @@ public abstract class Http {
      * @return the http connection
      * @throws IOException if an I/O error occurs
      */
-    public static HttpURLConnection post(final String serverUrl, final String ctype, final String body) throws IOException {
-        return post(open(serverUrl), ctype, body);
+    public static HttpURLConnection postWithBody(final String serverUrl, final String ctype, final String body) throws IOException {
+        return postWithBody(open(serverUrl), ctype, body);
     }
 
     /* ************ */
 
     /**
-     * set http connection request 'GET' method.
+     * Set http connection request 'GET' method and disable output operations.
      *
      * @param httpUrlConnection the http connection
      * @return the http connection
      * @throws IOException if an I/O error occurs
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static HttpURLConnection get(final HttpURLConnection httpUrlConnection) throws IOException {
         httpUrlConnection.setRequestMethod(GET);
@@ -190,8 +222,7 @@ public abstract class Http {
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final String... params) throws IOException {
         final String charset = UTF_8.name();
         final String ctype = "application/x-www-form-urlencoded;charset=" + charset;
-        final String requestBody = buildQuery(charset, params);
-        return post(httpUrlConnection, ctype, requestBody);
+        return postWithBody(httpUrlConnection, ctype, buildQuery(charset, params));
     }
 
     /**
@@ -208,8 +239,7 @@ public abstract class Http {
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final Map<String, String> params) throws IOException {
         final String charset = UTF_8.name();
         final String ctype = "application/x-www-form-urlencoded;charset=" + charset;
-        final String requestBody = buildQuery(charset, params);
-        return post(httpUrlConnection, ctype, requestBody);
+        return postWithBody(httpUrlConnection, ctype, buildQuery(charset, params));
     }
 
     /**
@@ -221,9 +251,24 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final JsonStructure json) throws IOException {
-        return post(httpUrlConnection, "application/json;charset=UTF-8", json.toString());
+        return postWithBody(httpUrlConnection, "application/json;charset=UTF-8", json.toString());
     }
 
+    /**
+     * Posts data to http connection.
+     *
+     * @param httpUrlConnection the http connection
+     * @param ctype             the Content-Type
+     * @param body              the http request body
+     * @return the http connection
+     * @throws IOException if an I/O error occurs
+     * @see #postWithBody(HttpURLConnection, String, String)
+     * @deprecated since 1.0.14, to avoid conflicts with other methods, refactor the method to "postWithBody" method
+     */
+    @Deprecated
+    public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final String ctype, final String body) throws IOException {
+        return postWithBody(httpUrlConnection, ctype, body);
+    }
 
     /**
      * Posts data to http connection.
@@ -234,7 +279,7 @@ public abstract class Http {
      * @return the http connection
      * @throws IOException if an I/O error occurs
      */
-    public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final String ctype, final String body) throws IOException {
+    public static HttpURLConnection postWithBody(final HttpURLConnection httpUrlConnection, final String ctype, final String body) throws IOException {
         final Charset charset = determineCharset(ctype, UTF_8);
 
         httpUrlConnection.setRequestMethod(POST);
@@ -300,15 +345,67 @@ public abstract class Http {
     }
 
     /**
-     * Builds http 'GET' url using given params.
+     * Create http 'GET' url using given params.
      *
      * @param serverUrl the server url
-     * @param charset   the url encode encoding
      * @param params    the query name-value pairs
      * @return the http get url
+     * @since 1.0.14
      */
-    public static String urlAppend(final String serverUrl, final String charset, final String... params) {
-        final String query = buildQuery((null != charset ? charset : UTF_8.name()), params);
+    public static String createUrl(final String serverUrl, String... params) {
+        return createUrlWithCharset(serverUrl, UTF_8, params);
+    }
+
+    /**
+     * Create http 'GET' url using given params.
+     *
+     * @param serverUrl the server url
+     * @param params    the query name-value pairs
+     * @return the http get url
+     * @since 1.0.14
+     */
+    public static String createUrl(final String serverUrl, Map<String, String> params) {
+        return createUrlWithCharset(serverUrl, UTF_8, params);
+    }
+
+    /**
+     * Create http 'GET' url using given params.
+     *
+     * @param serverUrl the server url
+     * @param charset   the character encoding
+     * @param params    the query name-value pairs
+     * @return the http get url
+     * @since 1.0.14
+     */
+    public static String createUrlWithCharset(final String serverUrl, final Charset charset, final String... params) {
+        return createUrlWithQuery(serverUrl, buildQuery((null != charset ? charset.name() : UTF_8.name()), params));
+    }
+
+    /**
+     * Create http 'GET' url using given params.
+     *
+     * @param serverUrl the server url
+     * @param charset   the character encoding
+     * @param params    the query name-value pairs
+     * @return the http get url
+     * @since 1.0.14
+     */
+    public static String createUrlWithCharset(final String serverUrl, final Charset charset, final Map<String, String> params) {
+        return createUrlWithQuery(serverUrl, buildQuery((null != charset ? charset.name() : UTF_8.name()), params));
+    }
+
+    /**
+     * Create http 'GET' url with query string only.
+     *
+     * @param serverUrl server url
+     * @param query     query string
+     * @return new server url
+     * @since 1.0.14
+     */
+    public static String createUrlWithQuery(final String serverUrl, final String query) {
+        if (null == query || query.isEmpty()) {
+            return serverUrl;
+        }
         return serverUrl + (-1 < serverUrl.indexOf('?') ? '&' : '?') + query;
     }
 
@@ -319,11 +416,27 @@ public abstract class Http {
      * @param charset   the url encode encoding
      * @param params    the query name-value pairs
      * @return the http get url
-     * @since 1.0.14
+     * @see #createUrlWithCharset(String, Charset, String...)
+     * @deprecated 1.0.14
+     */
+    @Deprecated
+    public static String urlAppend(final String serverUrl, final String charset, final String... params) {
+        return createUrlWithQuery(serverUrl, buildQuery(charset, params));
+    }
+
+    /**
+     * Builds http 'GET' url using given params.
+     *
+     * @param serverUrl the server url
+     * @param charset   the url encode encoding
+     * @param params    the query name-value pairs
+     * @return the http get url
+     * @see #createUrlWithCharset(String, Charset, Map)
+     * @since 1.0.13
+     * @deprecated 1.0.14
      */
     public static String urlAppend(final String serverUrl, final String charset, final Map<String, String> params) {
-        final String query = buildQuery((null != charset ? charset : UTF_8.name()), params);
-        return serverUrl + (-1 < serverUrl.indexOf('?') ? '&' : '?') + query;
+        return Http.createUrlWithQuery(serverUrl, buildQuery(charset, params));
     }
 
     /**
@@ -349,7 +462,7 @@ public abstract class Http {
     /**
      * Builds http query string(n=v&amp;n=v..).
      *
-     * @param charset the url encode encoding, not encode if null
+     * @param charset the character encoding, not encode if null
      * @param params  the name-value pairs
      * @return the query string
      */
@@ -378,7 +491,7 @@ public abstract class Http {
     /**
      * Builds http query string(n=v&amp;n=v..).
      *
-     * @param charset the url encode encoding, not encode if null
+     * @param charset the character encoding, not encode if null
      * @param params  the name-value pairs
      * @return the query string
      */
@@ -433,7 +546,7 @@ public abstract class Http {
      * Encodes the text.
      *
      * @param text the text.
-     * @param enc  the encoding
+     * @param enc  the character encoding
      * @return encoded text
      */
     public static String urlEncode(final String text, final String enc) throws UnsupportedCharsetException {
@@ -889,7 +1002,7 @@ public abstract class Http {
      * @return HttpURLConnection/HttpsURLConnection instance
      * @see #open(URL)
      * @see #open(String, HostnameVerifier, SSLSocketFactory)
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static HttpURLConnection open(final String serverUrl) throws IOException {
         return open(new URL(serverUrl));
@@ -904,7 +1017,7 @@ public abstract class Http {
      * @param serverUrl server url
      * @return HttpURLConnection/HttpsURLConnection instance
      * @see #open(URL, HostnameVerifier, SSLSocketFactory)
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static HttpURLConnection open(final URL serverUrl) throws IOException {
         // The ssl protocol version uses the JDK default.
@@ -922,7 +1035,7 @@ public abstract class Http {
      *
      * @param protocol protocol
      * @return SSL socket factory
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static SSLSocketFactory createInsecureSSLSocketFactory(final String protocol)
             throws NoSuchAlgorithmException, KeyManagementException {
@@ -942,7 +1055,7 @@ public abstract class Http {
      * @param sslSocketFactory ssl socket factory for https
      * @return HttpURLConnection/HttpsURLConnection instance
      * @throws IOException if an I/O error occurs
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static HttpURLConnection open(final String serverUrl,
                                          final HostnameVerifier hostnameVerifier,
@@ -965,7 +1078,7 @@ public abstract class Http {
      * @param sslSocketFactory ssl socket factory for https
      * @return HttpURLConnection/HttpsURLConnection instance
      * @throws IOException if an I/O error occurs
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static HttpURLConnection open(final URL serverUrl,
                                          final HostnameVerifier hostnameVerifier,
@@ -1055,6 +1168,7 @@ public abstract class Http {
 
     /**
      * Multipart uploader.
+     * TODO 确认中文encoding.
      */
     public static class Multipart {
         final HttpURLConnection httpUrlConnection;
@@ -1115,7 +1229,7 @@ public abstract class Http {
     }
 
     /**
-     * @since 1.0.14
+     * @since 1.0.13
      */
     public static final HostnameVerifier ANY_HOSTNAME_VERIFIER = new HostnameVerifier() {
         @Override

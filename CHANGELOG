@@ -1,5 +1,7 @@
 # 1.0.14
 1. Http.postMultipart 自动 setDoOutput(true)
+2. 废弃 Http.urlAppend, 新增 Http.createUrl, Http.createUrlWithQuery, Http.createUrlWithCharset
+3. 重命名 Http.post(conn, ctype, body) 为 Http.postWithBody(conn, ctype, body)
 
 # 1.0.13
 1. Http 标记原 open 方法过时
