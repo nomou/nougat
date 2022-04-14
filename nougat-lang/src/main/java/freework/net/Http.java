@@ -323,14 +323,14 @@ public abstract class Http {
      * ******************************************* */
 
     /**
-     * Builds child http url.
+     * Resolve the given path against the url.
      *
-     * @param endpoint the parent http url
-     * @param path     the child path
-     * @return the http url
+     * @param endpoint the url
+     * @param path     the path to resolve against the url
+     * @return the resulting url
      */
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
-    public static String buildUrl(final String endpoint, final String path) {
+    public static String resolveUrl(final String endpoint, final String path) {
         if (null == endpoint) {
             return path;
         }
@@ -407,6 +407,20 @@ public abstract class Http {
             return serverUrl;
         }
         return serverUrl + (-1 < serverUrl.indexOf('?') ? '&' : '?') + query;
+    }
+
+    /**
+     * Builds child http url.
+     *
+     * @param endpoint the parent http url
+     * @param path     the child path
+     * @return the http url
+     * @see #resolveUrl(String, String)
+     * @deprecated rename to 'resolveUrl'
+     */
+    @Deprecated
+    public static String buildUrl(final String endpoint, final String path) {
+        return resolveUrl(endpoint, path);
     }
 
     /**
