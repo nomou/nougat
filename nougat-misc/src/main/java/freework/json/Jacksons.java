@@ -38,7 +38,9 @@ import java.lang.reflect.Type;
  * </code>
  *
  * @author vacoor
+ * @deprecated
  */
+@Deprecated
 @SuppressWarnings({"unused"})
 public abstract class Jacksons {
     /* mapper 是线程安全的且可以重用 */
