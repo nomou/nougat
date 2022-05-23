@@ -625,7 +625,9 @@ public abstract class Http {
      *                          may require some feature configuration, eg: XEE attack prevention.
      * @return the xml document
      * @throws IOException if an I/O error occurs
+     * @deprecated
      */
+    @Deprecated
     public static Document getResponseBodyAsXml(final HttpURLConnection httpUrlConnection,
                                                 final DocumentBuilder builder) throws IOException {
         final int responseCode = httpUrlConnection.getResponseCode();
@@ -645,7 +647,9 @@ public abstract class Http {
      * @param httpUrlConnection the http connection
      * @return the json
      * @throws IOException if an I/O error occurs
+     * @deprecated
      */
+    @Deprecated
     public static JsonStructure getResponseBodyAsJson(final HttpURLConnection httpUrlConnection) throws IOException {
         final int responseCode = httpUrlConnection.getResponseCode();
         final String contentType = httpUrlConnection.getContentType();
@@ -898,6 +902,10 @@ public abstract class Http {
         return illegals;
     }
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static String serialize(final HttpCookie cookie) {
         final Calendar cal = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
         final SimpleDateFormat df = new SimpleDateFormat("EEE',' dd-MMM-yyyy HH:mm:ss 'GMT'", Locale.US);
@@ -924,6 +932,10 @@ public abstract class Http {
         return cookie.getName() + '=' + cookie.getValue() + "; domain=" + cookie.getDomain() + "; path=" + cookie.getPath() + "; expires=" + df.format(new Date(whenCreated + maxAge * 1000));
     }
 
+    /**
+     * @deprecated
+     */
+    @Deprecated
     public static List<HttpCookie> deserialize(final String header) {
         return HttpCookie.parse(header);
     }
