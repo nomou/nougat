@@ -1,7 +1,7 @@
 package freework.reflect;
 
 
-import freework.function.LazyValue;
+import freework.util.LazyValue;
 import freework.reflect.proxy.DefaultProxyFactory;
 import freework.reflect.proxy.ProxyFactory;
 

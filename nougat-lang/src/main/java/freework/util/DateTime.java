@@ -335,6 +335,31 @@ public class DateTime extends Date {
      * Parses a given datetime string into the datetime object it represents.
      *
      * @param datetime the datetime string
+     * @param pattern  the pattern of datetime string
+     * @return the datetime instance
+     */
+    public static DateTime get(final String datetime, final String pattern) {
+        return get(datetime, pattern, TimeZone.getDefault());
+    }
+
+    /**
+     * Parses a given datetime string into the datetime object it represents.
+     *
+     * @param datetime the datetime string
+     * @param pattern  the pattern of datetime string
+     * @param zone     the time zone
+     * @return the datetime instance
+     */
+    public static DateTime get(final String datetime, final String pattern, final TimeZone zone) {
+        final SimpleDateFormat fmt = new SimpleDateFormat(pattern);
+        fmt.setTimeZone(zone);
+        return get(datetime, fmt);
+    }
+
+    /**
+     * Parses a given datetime string into the datetime object it represents.
+     *
+     * @param datetime the datetime string
      * @param fmt      the datetime string format
      * @return the datetime instance
      */
@@ -346,18 +371,4 @@ public class DateTime extends Date {
         }
     }
 
-    /**
-     * Parses a given datetime string into the datetime object it represents.
-     *
-     * @param datetime the datetime string
-     * @param pattern  the pattern of datetime string
-     * @return the datetime instance
-     */
-    public static DateTime get(final String datetime, final String pattern) {
-        try {
-            return wrap(new SimpleDateFormat(pattern).parse(datetime));
-        } catch (final ParseException e) {
-            throw new IllegalArgumentException("date string '" + datetime + "' can not matches pattern: '" + pattern + '\'');
-        }
-    }
 }

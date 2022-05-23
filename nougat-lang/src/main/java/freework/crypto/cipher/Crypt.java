@@ -52,6 +52,39 @@ import java.util.Arrays;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Crypt {
+    /**
+     * @since 1.1.4
+     */
+    interface Codec<T> {
+        Codec<String> HEX = new Codec<String>() {
+            @Override
+            public String encode(final byte[] bytes) {
+                return null != bytes ? Hex.encode(bytes) : null;
+            }
+
+            @Override
+            public byte[] decode(final String encoded) {
+                return null != encoded ? Hex.decode(encoded) : null;
+            }
+        };
+
+        Codec<String> BASE64 = new Codec<String>() {
+            @Override
+            public String encode(final byte[] bytes) {
+                return null != bytes ? Base64.encodeToString(bytes) : null;
+            }
+
+            @Override
+            public byte[] decode(final String encoded) {
+                return null != encoded ? Base64.decode(encoded) : null;
+            }
+        };
+
+        T encode(final byte[] bytes);
+
+        byte[] decode(final T encoded);
+
+    }
 
     /**
      * Non-instantiate.
@@ -66,7 +99,7 @@ public abstract class Crypt {
      * @return cipher text
      */
     public String encrypt(final String plain) {
-        return encrypt(plain, null);
+        return encrypt(plain, Codec.BASE64);
     }
 
     /**
@@ -76,31 +109,35 @@ public abstract class Crypt {
      * @return plain text
      */
     public String decrypt(final String cipher) {
-        return decrypt(cipher, null);
+        return decrypt(cipher, Codec.BASE64);
     }
 
     /**
      * Encrypt plain text and format cipher text.
      *
-     * @param plain  plain text
-     * @param format cipher format
+     * @param plain plain text
+     * @param codec cipher format
      * @return formatted cipher text
      */
-    public String encrypt(final String plain, final Format format) {
-        final Format fmt = null != format ? format : Format.BASE64;
-        return null != plain ? fmt.format(encrypt(Bytes.toBytes(plain))) : null;
+    public <T> T encrypt(final String plain, final Codec<T> codec) {
+        if (null == codec) {
+            throw new IllegalArgumentException("codec is null");
+        }
+        return null != plain ? codec.encode(encrypt(Bytes.toBytes(plain))) : null;
     }
 
     /**
      * Parse formatted cipher text and decrypt it.
      *
      * @param cipher formatted cipher text
-     * @param format cipher format
+     * @param codec  cipher codec
      * @return plain text
      */
-    public String decrypt(final String cipher, final Format format) {
-        final Format fmt = null != format ? format : Format.BASE64;
-        return null != cipher ? Bytes.toString(decrypt(fmt.parse(cipher))) : null;
+    public <T> String decrypt(final T cipher, final Codec<T> codec) {
+        if (null == codec) {
+            throw new IllegalArgumentException("codec is null");
+        }
+        return null != cipher ? Bytes.toString(decrypt(codec.decode(cipher))) : null;
     }
 
     /**
@@ -237,7 +274,7 @@ public abstract class Crypt {
          * encrypt: max_block_size = number_of_key_bits / 8 - number_of_padding(PKCS#1 = 11)
          * decrypt: max_block_size = number_of_Key_bits / 8.
          * eg:
-          * 1024 bits key encrypt, max_block_size = 1024 / 8 - 11 = 117
+         * 1024 bits key encrypt, max_block_size = 1024 / 8 - 11 = 117
          */
         if (key instanceof RSAKey && (Cipher.ENCRYPT_MODE == opmode || Cipher.DECRYPT_MODE == opmode)) {
             try {
@@ -705,8 +742,8 @@ public abstract class Crypt {
      * @return the asymmetric key pair
      */
     public static KeyPair newAsymmetricKey(final String transformation, final String base64PublicKey, final String base64PrivateKey) {
-        final byte[] publicKey = null != base64PublicKey ? Format.BASE64.parse(base64PublicKey) : new byte[0];
-        final byte[] privateKey = null != base64PrivateKey ? Format.BASE64.parse(base64PrivateKey) : new byte[0];
+        final byte[] publicKey = null != base64PublicKey ? Codec.BASE64.decode(base64PublicKey) : new byte[0];
+        final byte[] privateKey = null != base64PrivateKey ? Codec.BASE64.decode(base64PrivateKey) : new byte[0];
         return newAsymmetricKey(transformation, publicKey, privateKey);
     }
 
