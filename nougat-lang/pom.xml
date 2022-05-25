@@ -68,6 +68,18 @@
             <optional>true</optional>
         </dependency>
         <!-- proxy lib END -->
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.databene</groupId>
+            <artifactId>contiperf</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>

@@ -5,6 +5,7 @@
 4. 废弃 Http.buildUrl, 新增 Http.resolveUrl
 5. 优化 LazyValue 实现, 移动到 util 包中
 6. 移除 crypt 包中 Format 调整为内部类
+7. 重写了 JAXB2
 
 # 1.0.13
 1. Http 标记原 open 方法过时

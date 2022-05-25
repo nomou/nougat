@@ -1,231 +1,167 @@
-/*
- * Copyright (c) 2005, 2014 vacoor
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- */
 package freework.xml;
 
-import javax.xml.bind.DataBindingException;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.annotation.XmlAnyElement;
+import org.w3c.dom.Node;
+import org.xml.sax.ContentHandler;
+
+import javax.xml.bind.*;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLEventWriter;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.beans.Introspector;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.lang.ref.WeakReference;
+import java.io.*;
+import java.util.Collections;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Class that defines convenience methods for common, simple use of JAXB.
- *
- * <p>NOTE: This class provides the following features compared to {@link javax.xml.bind.JAXB}:
- * <br>1. Added support for XML string literals
- * <br>2. {@code marshal} method supports arrays
- * <br>3. Added the {@code marshalAny} method to process the array</p>
+ * <p>
+ * Unlike {@link javax.xml.bind.JAXB} that only cache the last {@link JAXBContext} used,
+ * this class will cache the all {@link JAXBContext} used for improve the performance.
+ * </p>
  *
  * @author vacoor
  * @see javax.xml.bind
  * @see javax.xml.bind.JAXB
  * @since 1.0
  */
-@SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "PMD.AbstractClassShouldStartWithAbstractNamingRule"})
-public abstract class JAXB2 {
+public final class JAXB2 {
     /**
-     * UTF-8 charset.
+     * Empty properties.
      */
-    private static final String UTF_8 = "UTF-8";
+    public static final Map<String, Object> NONE = Collections.emptyMap();
 
     /**
-     * The JAXB context monitor.
+     * Cache.
      */
-    private static final Object CONTEXT_MONITOR = new Object();
+    private static final ConcurrentMap<Class, JAXBContext> CACHE = new ConcurrentHashMap<>();
 
     /**
-     * The JAXB context cache.
-     */
-    private static volatile Map<Class, WeakReference<JAXBContext>> CACHE = new WeakHashMap<Class, WeakReference<JAXBContext>>();
-
-    /**
-     * Non-instantiate.
+     * No instanciation is allowed.
      */
     private JAXB2() {
     }
 
     /**
-     * Writes a Java object tree into XML string.
+     * Reads in a Java object tree from the given XML string.
      *
-     * @param obj the Java object to be marshalled into XML
-     * @return the xml string
+     * @param xml          the XML content to unmarshal
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param <T>          JAXB mapped object type
+     * @return the JAXB object
      */
-    public static String marshal(final Object obj) {
-        return marshal(obj, UTF_8);
+    public static <T> T unmarshal(final String xml, final Class<T> declaredType) {
+        return unmarshal(new StringReader(xml), declaredType);
     }
 
     /**
-     * Writes a Java object tree into XML string.
+     * Reads in a Java object tree from the given XML input.
      *
-     * @param obj      the Java object to be marshalled into XML
-     * @param encoding the xml encoding
-     * @return the xml string
+     * @param xml          the entire stream is read as an XML infoset.
+     *                     upon a successful completion, the stream will be closed by this method.
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param <T>          JAXB mapped object type
+     * @return the JAXB object
      */
-    public static String marshal(final Object obj, final String encoding) {
-        final StringWriter writer = new StringWriter();
-        marshal(obj, writer, encoding);
-        return writer.toString();
+    public static <T> T unmarshal(final InputStream xml, final Class<T> declaredType) {
+        return unmarshal(new StreamSource(xml), declaredType);
     }
 
     /**
-     * Writes a Java object tree to XML and store it to the specified location.
+     * Reads in a Java object tree from the given XML input.
      *
-     * @param obj      the Java object to be marshalled into XML
-     * @param file     XML will be written to this file. If it already exists, it will be overwritten
-     * @param encoding the xml encoding
+     * @param xml          The character stream is read as an XML infoset.
+     *                     The encoding declaration in the XML will be ignored.
+     *                     Upon a successful completion, the stream will be closed by this method.
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param <T>          JAXB mapped object type
+     * @return the JAXB object
      */
-    public static void marshal(final Object obj, final File file, final String encoding) {
-        marshal(obj, new StreamResult(file), encoding);
+    public static <T> T unmarshal(final Reader xml, final Class<T> declaredType) {
+        return unmarshal(new StreamSource(xml), declaredType);
     }
 
     /**
-     * Writes a Java object tree to XML and store it to the specified output stream.
+     * Reads in a Java object tree from the given XML input.
      *
-     * @param obj      the Java object to be marshalled into XML
-     * @param out      the output stream to store
-     * @param encoding the xml encoding
+     * @param source       the XML infoset that the {@link Source} represents is read.
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param <T>          JAXB mapped object type
+     * @return the JAXB object
      */
-    public static void marshal(final Object obj, final OutputStream out, final String encoding) {
-        marshal(obj, new StreamResult(out), encoding);
+    public static <T> T unmarshal(final Source source, final Class<T> declaredType) {
+        return unmarshal(source, declaredType, Collections.<String, Object>emptyMap());
     }
 
     /**
-     * Writes a Java object tree to XML and store it to the specified writer.
+     * Reads in a Java object tree from the given XML input.
      *
-     * @param obj      the Java object to be marshalled into XML
-     * @param writer   the writer stream to store
-     * @param encoding the xml encoding
+     * @param source       the XML infoset that the {@link Source} represents is read.
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param props        set the particular property in the underlying implementation of <tt>Marshaller</tt>.
+     * @param <T>          JAXB mapped object type
      */
-    public static void marshal(final Object obj, final Writer writer, final String encoding) {
-        marshal(obj, new StreamResult(writer), encoding);
-    }
-
-
-    /**
-     * Writes a Java object tree to XML and store it to the specified location.
-     *
-     * @param obj      the Java object to be marshalled into XML
-     * @param result   represents the receiver of XML
-     * @param encoding the xml encoding
-     * @see javax.xml.transform.Result
-     */
-    @SuppressWarnings("unchecked")
-    public static void marshal(final Object obj, final Result result, final String encoding) {
+    public static <T> T unmarshal(final Source source, final Class<T> declaredType, final Map<String, ?> props) {
         try {
-            JAXBContext context;
-            Object source = obj;
-            if (obj instanceof JAXBElement) {
-                // if obj is a instance of JAXBElement, using its definition type
-                context = getContext(((JAXBElement<?>) obj).getDeclaredType());
-            } else {
-                // using getClass() if it is annotation bean / normal bean
-                final Class<?> clazz = obj.getClass();
-                final XmlRootElement annotation = clazz.getAnnotation(XmlRootElement.class);
-
-                context = getContext(clazz);
-                if (null == annotation) {
-                    String qname;
-                    if (clazz.isArray()) {
-                        qname = clazz.getComponentType().getSimpleName() + "s";
-                    } else {
-                        qname = clazz.getSimpleName();
-                    }
-                    qname = Introspector.decapitalize(qname);
-                    source = new JAXBElement(new QName(qname), clazz, obj);
-                }
-            }
-
-            final Marshaller marshaller = context.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-            marshaller.setProperty(Marshaller.JAXB_ENCODING, encoding);
-            marshaller.marshal(source, result);
-        } catch (final JAXBException je) {
-            throw new DataBindingException(je);
+            return createUnmarshaller(declaredType, props).unmarshal(source, declaredType).getValue();
+        } catch (final JAXBException e) {
+            throw new DataBindingException(e);
         }
     }
 
     /**
-     * Reads in a Java object tree from the given XML string.
+     * Reads in a Java object tree from the given XML data.
      *
-     * @param xml  the XML string
-     * @param type the jaxb object class
-     * @param <T>  the jaxb object type
-     * @return the jaxb object
+     * @param node         the document/element to unmarshal XML data from.
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param <T>          JAXB mapped object type
+     * @return the JAXB object
      */
-    public static <T> T unmarshal(final String xml, final Class<T> type) {
-        return unmarshal(new StringReader(xml), type);
-    }
-
-    /**
-     * Reads in a Java object tree from the given XML input.
-     *
-     * @param xml  reads the entire file as XML.
-     * @param type the jaxb object class
-     * @param <T>  the jaxb object type
-     * @return the jaxb object
-     */
-    public static <T> T unmarshal(File xml, Class<T> type) {
-        return unmarshal(new StreamSource(xml), type);
-    }
-
-    /**
-     * Reads in a Java object tree from the given XML input.
-     *
-     * @param in   the entire stream is read as an XML infoset.
-     *             upon a successful completion, the stream will be closed by this method.
-     * @param type the jaxb object class
-     * @param <T>  the jaxb object type
-     * @return the jaxb object
-     */
-    public static <T> T unmarshal(final InputStream in, final Class<T> type) {
-        return unmarshal(new StreamSource(in), type);
-    }
-
-    /**
-     * Reads in a Java object tree from the given XML input.
-     *
-     * @param reader the character stream is read as an XML infoset.
-     * @param type   the jaxb object class
-     * @param <T>    the jaxb object type
-     * @return the jaxb object
-     */
-    public static <T> T unmarshal(final Reader reader, final Class<T> type) {
-        return unmarshal(new StreamSource(reader), type);
-    }
-
-    /**
-     * Reads in a Java object tree from the given XML input.
-     *
-     * @param source the XML infoset that the {@link Source} represents is read.
-     * @param type   the jaxb object class
-     * @param <T>    the jaxb object type
-     * @return the jaxb object
-     */
-    @SuppressWarnings("unchecked")
-    public static <T> T unmarshal(final Source source, final Class<T> type) {
+    public static <T> T unmarshal(final Node node, final Class<T> declaredType, final Map<String, ?> props) {
         try {
-            return getContext(type).createUnmarshaller().unmarshal(source, type).getValue();
+            return createUnmarshaller(declaredType, props).unmarshal(node, declaredType).getValue();
+        } catch (final JAXBException e) {
+            throw new DataBindingException(e);
+        }
+    }
+
+    /**
+     * Reads in a Java object tree from the given XML stream reader.
+     *
+     * @param reader       The parser to be read.
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param <T>          JAXB mapped object type
+     * @return the JAXB object
+     */
+    public static <T> T unmarshal(final XMLStreamReader reader, final Class<T> declaredType, final Map<String, ?> props) {
+        try {
+            return createUnmarshaller(declaredType, props).unmarshal(reader, declaredType).getValue();
+        } catch (final JAXBException e) {
+            throw new DataBindingException(e);
+        }
+    }
+
+    /**
+     * Reads in a Java object tree from the given XML event reader.
+     *
+     * @param reader       The parser to be read.
+     * @param declaredType appropriate JAXB mapped class to hold xml root element
+     * @param <T>          JAXB mapped object type
+     * @return the JAXB object
+     */
+    public static <T> T unmarshal(final XMLEventReader reader, final Class<T> declaredType, final Map<String, ?> props) {
+        try {
+            return createUnmarshaller(declaredType, props).unmarshal(reader, declaredType).getValue();
         } catch (final JAXBException e) {
             throw new DataBindingException(e);
         }
@@ -233,91 +169,255 @@ public abstract class JAXB2 {
 
 
     /**
-     * Writes a Java array using the QName wrapper into a string.
+     * Writes a Java object tree to XML and store it to as string
      *
-     * @param elements  the Java array to be marshalled into XML
-     * @param wrapQName the QName of wrapper
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @return the xml content
      */
-    public static <T> String marshalAny(final T[] elements, final String wrapQName) {
-        return marshalAny(elements, wrapQName, UTF_8);
+    public static String marshal(final Object jaxbObject) {
+        return marshal(jaxbObject, false);
     }
 
     /**
-     * Writes a Java array using the QName wrapper into a string.
+     * Writes a Java object tree to XML and store it to as string
      *
-     * @param elements  the Java array to be marshalled into XML
-     * @param wrapQName the QName of wrapper
-     * @param encoding  the xml encoding
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param format     XML data is formatted with linefeeds and indentation
+     * @return the xml content
      */
-    public static <T> String marshalAny(final T[] elements, final String wrapQName, final String encoding) {
+    public static String marshal(final Object jaxbObject, final boolean format) {
         final StringWriter writer = new StringWriter();
-        marshalAny(elements, wrapQName, writer, encoding);
+        marshal(jaxbObject, writer, format);
         return writer.toString();
     }
 
     /**
-     * Writes a Java array using the QName wrapper into the writer.
+     * Writes a Java object tree to XML and store it to the specified output stream.
      *
-     * @param elements  the Java array to be marshalled into XML
-     * @param wrapQName the QName of wrapper
-     * @param writer    the writer to store
-     * @param encoding  the xml encoding
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param xml        the output stream to store
      */
-    public static <T> void marshalAny(final T[] elements, final String wrapQName, final Writer writer, final String encoding) {
-        try {
-            final Class<?> componentType = elements.getClass().getComponentType();
-            if (Object.class == componentType) {
-                throw new UnsupportedOperationException("unsupported object array");
-            }
+    public static void marshal(final Object jaxbObject, final OutputStream xml) {
+        marshal(jaxbObject, new StreamResult(xml), false);
+    }
 
-            final AnyWrapper<T> wrapper = AnyWrapper.wrap(elements);
-            final JAXBElement<AnyWrapper> root = new JAXBElement<AnyWrapper>(new QName(wrapQName), AnyWrapper.class, wrapper);
-            final Marshaller marshaller = getContext(componentType).createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-            marshaller.setProperty(Marshaller.JAXB_ENCODING, encoding);
-            marshaller.marshal(root, writer);
-        } catch (final JAXBException je) {
-            throw new DataBindingException(je);
+    /**
+     * Writes a Java object tree to XML and store it to the specified output stream.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param format     XML data is formatted with linefeeds and indentation
+     * @param xml        the output stream to store
+     */
+    public static void marshal(final Object jaxbObject, final OutputStream xml, final boolean format) {
+        marshal(jaxbObject, new StreamResult(xml), format);
+    }
+
+    /**
+     * Writes a Java object tree to XML and store it to the specified writer.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param writer     the writer to store
+     */
+    public static void marshal(final Object jaxbObject, final Writer writer) {
+        marshal(jaxbObject, writer, false);
+    }
+
+    /**
+     * Writes a Java object tree to XML and store it to the specified writer.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param xml        the writer to store
+     * @param format     XML data is formatted with linefeeds and indentation
+     */
+    public static void marshal(final Object jaxbObject, final Writer xml, final boolean format) {
+        marshal(jaxbObject, new StreamResult(xml), format);
+    }
+
+    /**
+     * Writes a Java object tree to XML and store it to the specified location.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param xml        the XML will be sent to the {@link Result} object.
+     * @param format     XML data is formatted with linefeeds and indentation
+     */
+    public static void marshal(final Object jaxbObject, final Result xml, final boolean format) {
+        marshal(jaxbObject, xml, Collections.singletonMap(Marshaller.JAXB_FORMATTED_OUTPUT, format));
+    }
+
+    /**
+     * Writes a Java object tree to XML and store it to the specified location.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param xml        the XML will be sent to the {@link Result} object.
+     * @param props      set the particular property in the underlying implementation of <tt>Unmarshaller</tt>.
+     */
+    @SuppressWarnings("unchecked")
+    public static void marshal(final Object jaxbObject, final Result xml, final Map<String, ?> props) {
+        try {
+            Marshaller marshaller;
+            Object jaxbObjectToUse = jaxbObject;
+            if (jaxbObject instanceof JAXBElement) {
+                final JAXBElement element = (JAXBElement) jaxbObject;
+                final Class<?> declaredType = element.getDeclaredType();
+                marshaller = createMarshaller(declaredType, props);
+            } else {
+                final Class<?> declaredType = jaxbObject.getClass();
+                final XmlRootElement annotation = declaredType.getAnnotation(XmlRootElement.class);
+                if (null == annotation) {
+                    final String inferName = inferName(declaredType);
+                    jaxbObjectToUse = new JAXBElement(new QName(inferName), declaredType, jaxbObject);
+                }
+                marshaller = createMarshaller(declaredType, props);
+            }
+            marshaller.marshal(jaxbObjectToUse, xml);
+        } catch (final JAXBException e) {
+            throw new DataBindingException(e);
         }
+    }
+
+    /**
+     * Writes a Java object tree into SAX2 events.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param handler    XML will be sent to this handler as SAX2 events
+     * @param props      set the particular property in the underlying implementation of <tt>Unmarshaller</tt>.
+     */
+    public static void marshal(final Object jaxbObject, final ContentHandler handler, final Map<String, ?> props) {
+        marshal(jaxbObject, new SAXResult(handler), props);
+    }
+
+    /**
+     * Writes a Java object tree into a DOM tree.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param node       DOM nodes will be added as children of this node.
+     *                   This parameter must be a Node that accepts children
+     * @param props      set the particular property in the underlying implementation of <tt>Unmarshaller</tt>.
+     */
+    public static void marshal(final Object jaxbObject, final Node node, final Map<String, ?> props) {
+        marshal(jaxbObject, new DOMResult(node), props);
+    }
+
+    /**
+     * Writes a Java object tree into a {@link XMLStreamWriter}.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param writer     XML will be sent to this writer.
+     * @param props      set the particular property in the underlying implementation of <tt>Unmarshaller</tt>.
+     */
+    @SuppressWarnings("unchecked")
+    public static void marshal(final Object jaxbObject, final XMLStreamWriter writer, final Map<String, ?> props) {
+        try {
+            Marshaller marshaller;
+            Object jaxbObjectToUse = jaxbObject;
+            if (jaxbObject instanceof JAXBElement) {
+                final JAXBElement element = (JAXBElement) jaxbObject;
+                final Class<?> declaredType = element.getDeclaredType();
+                marshaller = createMarshaller(declaredType, props);
+            } else {
+                final Class<?> declaredType = jaxbObject.getClass();
+                final XmlRootElement annotation = declaredType.getAnnotation(XmlRootElement.class);
+                if (null == annotation) {
+                    final String inferName = inferName(declaredType);
+                    jaxbObjectToUse = new JAXBElement(new QName(inferName), declaredType, jaxbObject);
+                }
+                marshaller = createMarshaller(declaredType, props);
+            }
+            marshaller.marshal(jaxbObjectToUse, writer);
+        } catch (final JAXBException e) {
+            throw new DataBindingException(e);
+        }
+    }
+
+    /**
+     * Writes a Java object tree into a {@link XMLEventWriter}.
+     *
+     * @param jaxbObject the Java object to be marshalled into XML
+     * @param writer     XML will be sent to this writer.
+     * @param props      set the particular property in the underlying implementation of <tt>Unmarshaller</tt>.
+     */
+    @SuppressWarnings("unchecked")
+    public static void marshal(final Object jaxbObject, final XMLEventWriter writer, final Map<String, ?> props) {
+        try {
+            Marshaller marshaller;
+            Object jaxbObjectToUse = jaxbObject;
+            if (jaxbObject instanceof JAXBElement) {
+                final JAXBElement element = (JAXBElement) jaxbObject;
+                final Class<?> declaredType = element.getDeclaredType();
+                marshaller = createMarshaller(declaredType, props);
+            } else {
+                final Class<?> declaredType = jaxbObject.getClass();
+                final XmlRootElement annotation = declaredType.getAnnotation(XmlRootElement.class);
+                if (null == annotation) {
+                    final String inferName = inferName(declaredType);
+                    jaxbObjectToUse = new JAXBElement(new QName(inferName), declaredType, jaxbObject);
+                }
+                marshaller = createMarshaller(declaredType, props);
+            }
+            marshaller.marshal(jaxbObjectToUse, writer);
+        } catch (final JAXBException e) {
+            throw new DataBindingException(e);
+        }
+    }
+
+
+    private static String inferName(Class clazz) {
+        return Introspector.decapitalize(clazz.getSimpleName());
+    }
+
+    private static Unmarshaller createUnmarshaller(final Class<?> classToBeBound) throws JAXBException {
+        return createUnmarshaller(classToBeBound, NONE);
+    }
+
+    private static Unmarshaller createUnmarshaller(final Class<?> classToBeBound, final Map<String, ?> props) throws JAXBException {
+        final Unmarshaller unmarshaller = getContext(classToBeBound).createUnmarshaller();
+        for (Map.Entry<String, ?> prop : nullSafe(props).entrySet()) {
+            unmarshaller.setProperty(prop.getKey(), prop.getValue());
+        }
+        return unmarshaller;
+    }
+
+    private static Marshaller createMarshaller(final Class classToBeBound) throws JAXBException {
+        return createMarshaller(classToBeBound, Collections.<String, Object>emptyMap());
+    }
+
+    private static Marshaller createMarshaller(final Class classToBeBound, final Map<String, ?> props) throws JAXBException {
+        final Marshaller marshaller = getContext(classToBeBound).createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+        for (Map.Entry<String, ?> prop : nullSafe(props).entrySet()) {
+            marshaller.setProperty(prop.getKey(), prop.getValue());
+        }
+        return marshaller;
     }
 
     /**
      * Obtains the {@link JAXBContext} from the given type, by using the cache if possible.
      *
-     * @param type the bound type
-     * @return the jaxb context
-     * @throws javax.xml.bind.JAXBException if an error occurs
+     * @param classToBeBound class to be bound
      */
-    public static JAXBContext getContext(final Class<?> type) throws JAXBException {
-        JAXBContext context = null;
-        WeakReference<JAXBContext> ref = CACHE.get(type);
-        if (ref != null) {
-            context = ref.get();
-            if (context != null) {
-                return context;
+    private static <T> JAXBContext getContext(final Class<T> classToBeBound) throws JAXBException {
+        JAXBContext jaxbContext = CACHE.get(classToBeBound);
+        if (null != jaxbContext) {
+            return jaxbContext;
+        }
+        synchronized (CACHE) {
+            jaxbContext = CACHE.get(classToBeBound);
+            if (null == jaxbContext) {
+                jaxbContext = createContext(classToBeBound);
+                CACHE.put(classToBeBound, jaxbContext);
             }
         }
-        synchronized (CONTEXT_MONITOR) {
-            ref = CACHE.get(type);
-            if (ref == null || ref.get() == null) {
-                context = JAXBContext.newInstance(type, AnyWrapper.class);
-                CACHE.put(type, new WeakReference<JAXBContext>(context));
-            }
-        }
-        return context;
+        return jaxbContext;
     }
 
     /**
-     * Wrapper for array.
+     * @param classesToBeBound list of java classes to be recognized by the new {@link JAXBContext}.
      */
-    private static class AnyWrapper<T> {
-        @XmlAnyElement
-        protected T[] any;
+    private static JAXBContext createContext(final Class<?>... classesToBeBound) throws JAXBException {
+        return JAXBContext.newInstance(classesToBeBound);
+    }
 
-        static <T> AnyWrapper<T> wrap(final T[] any) {
-            final AnyWrapper<T> root = new AnyWrapper<T>();
-            root.any = any;
-            return root;
-        }
+    private static <K, V> Map<K, V> nullSafe(final Map<K, V> props) {
+        return null != props ? props : Collections.<K, V>emptyMap();
     }
 }
