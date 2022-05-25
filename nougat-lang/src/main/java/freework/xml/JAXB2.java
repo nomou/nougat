@@ -18,6 +18,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.beans.Introspector;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +45,7 @@ public final class JAXB2 {
     /**
      * Cache.
      */
-    private static final ConcurrentMap<Class, JAXBContext> CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<Class<?>, JAXBContext> JAXB_CONTEXT_MAP = new ConcurrentHashMap<>(64);
 
     /**
      * No instanciation is allowed.
@@ -311,7 +312,7 @@ public final class JAXB2 {
             Marshaller marshaller;
             Object jaxbObjectToUse = jaxbObject;
             if (jaxbObject instanceof JAXBElement) {
-                final JAXBElement element = (JAXBElement) jaxbObject;
+                final JAXBElement<?> element = (JAXBElement<?>) jaxbObject;
                 final Class<?> declaredType = element.getDeclaredType();
                 marshaller = createMarshaller(declaredType, props);
             } else {
@@ -342,7 +343,7 @@ public final class JAXB2 {
             Marshaller marshaller;
             Object jaxbObjectToUse = jaxbObject;
             if (jaxbObject instanceof JAXBElement) {
-                final JAXBElement element = (JAXBElement) jaxbObject;
+                final JAXBElement<?> element = (JAXBElement<?>) jaxbObject;
                 final Class<?> declaredType = element.getDeclaredType();
                 marshaller = createMarshaller(declaredType, props);
             } else {
@@ -361,7 +362,7 @@ public final class JAXB2 {
     }
 
 
-    private static String inferName(Class clazz) {
+    private static String inferName(Class<?> clazz) {
         return Introspector.decapitalize(clazz.getSimpleName());
     }
 
@@ -370,20 +371,20 @@ public final class JAXB2 {
     }
 
     private static Unmarshaller createUnmarshaller(final Class<?> classToBeBound, final Map<String, ?> props) throws JAXBException {
-        final Unmarshaller unmarshaller = getContext(classToBeBound).createUnmarshaller();
+        final Unmarshaller unmarshaller = getJaxbContext(classToBeBound).createUnmarshaller();
         for (Map.Entry<String, ?> prop : nullSafe(props).entrySet()) {
             unmarshaller.setProperty(prop.getKey(), prop.getValue());
         }
         return unmarshaller;
     }
 
-    private static Marshaller createMarshaller(final Class classToBeBound) throws JAXBException {
+    private static Marshaller createMarshaller(final Class<?> classToBeBound) throws JAXBException {
         return createMarshaller(classToBeBound, Collections.<String, Object>emptyMap());
     }
 
-    private static Marshaller createMarshaller(final Class classToBeBound, final Map<String, ?> props) throws JAXBException {
-        final Marshaller marshaller = getContext(classToBeBound).createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_ENCODING, "UTF-8");
+    private static Marshaller createMarshaller(final Class<?> classToBeBound, final Map<String, ?> props) throws JAXBException {
+        final Marshaller marshaller = getJaxbContext(classToBeBound).createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_ENCODING, StandardCharsets.UTF_8.name());
         for (Map.Entry<String, ?> prop : nullSafe(props).entrySet()) {
             marshaller.setProperty(prop.getKey(), prop.getValue());
         }
@@ -395,16 +396,20 @@ public final class JAXB2 {
      *
      * @param classToBeBound class to be bound
      */
-    private static <T> JAXBContext getContext(final Class<T> classToBeBound) throws JAXBException {
-        JAXBContext jaxbContext = CACHE.get(classToBeBound);
+    private static JAXBContext getJaxbContext(final Class<?> classToBeBound) throws JAXBException {
+        if (null == classToBeBound) {
+            throw new NullPointerException("classToBeBound must not be null");
+        }
+
+        JAXBContext jaxbContext = JAXB_CONTEXT_MAP.get(classToBeBound);
         if (null != jaxbContext) {
             return jaxbContext;
         }
-        synchronized (CACHE) {
-            jaxbContext = CACHE.get(classToBeBound);
+        synchronized (JAXB_CONTEXT_MAP) {
+            jaxbContext = JAXB_CONTEXT_MAP.get(classToBeBound);
             if (null == jaxbContext) {
-                jaxbContext = createContext(classToBeBound);
-                CACHE.put(classToBeBound, jaxbContext);
+                jaxbContext = createJaxbContext(classToBeBound);
+                JAXB_CONTEXT_MAP.putIfAbsent(classToBeBound, jaxbContext);
             }
         }
         return jaxbContext;
@@ -413,7 +418,7 @@ public final class JAXB2 {
     /**
      * @param classesToBeBound list of java classes to be recognized by the new {@link JAXBContext}.
      */
-    private static JAXBContext createContext(final Class<?>... classesToBeBound) throws JAXBException {
+    private static JAXBContext createJaxbContext(final Class<?>... classesToBeBound) throws JAXBException {
         return JAXBContext.newInstance(classesToBeBound);
     }
 
