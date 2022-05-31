@@ -53,7 +53,7 @@ abstract class UnixHandle extends Handle {
 
     @Override
     public Info info() {
-        return info(pid);
+        return isAlive() ? info(pid) : null;
     }
 
     protected abstract Info info(final int pid);
