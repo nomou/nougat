@@ -1,3 +1,7 @@
+# 1.0.15
+1. 重构 proc 工具类
+2. 修改 Crypt -> Crypto
+
 # 1.0.14
 1. Http.postMultipart 自动 setDoOutput(true)
 2. 废弃 Http.urlAppend, 新增 Http.createUrl, Http.createUrlWithQuery, Http.createUrlWithCharset
