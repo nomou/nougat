@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -20,8 +21,8 @@ import java.util.Date;
 @SuppressWarnings("unused")
 public abstract class DownloadView {
     public static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-    private static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
-    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset ISO_8859_1 = StandardCharsets.ISO_8859_1;
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     /**
      * 下载的文件名称.
