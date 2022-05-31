@@ -8,6 +8,14 @@ public abstract class Handle {
      */
     private static final boolean IS_WINDOWS = Platform.isWindows();
 
+    interface Info {
+
+        String command();
+
+        String[] arguments();
+
+    }
+
     public abstract int pid();
 
     public abstract boolean isAlive();
@@ -16,13 +24,7 @@ public abstract class Handle {
 
     public abstract boolean killForcibly();
 
-    interface Info {
-
-        String command();
-
-        String[] arguments();
-
-    }
+    public abstract Info info();
 
     public static Handle current() {
         return IS_WINDOWS ? WindowsHandle.current() : UnixHandle.current();
@@ -36,12 +38,4 @@ public abstract class Handle {
         return IS_WINDOWS ? WindowsHandle.of(process) : UnixHandle.of(process);
     }
 
-    /*
-    public static void main(String[] args) {
-        final Handle handle = Handle.of(86670);
-        System.out.println(handle.isAlive());
-        handle.kill();
-        System.out.println(handle.isAlive());
-    }
-    */
 }
