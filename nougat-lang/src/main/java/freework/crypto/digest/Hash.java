@@ -300,7 +300,7 @@ public class Hash {
         }
     }
 
-    public static DigestOutputStream nopOut(final Algorithm algorithm) {
+    public static DigestOutputStream digestOut(final Algorithm algorithm) {
         try {
             final MessageDigest digest = MessageDigest.getInstance(algorithm.name);
             return new DigestOutputStream(NullOutputStream.INSTANCE, digest);

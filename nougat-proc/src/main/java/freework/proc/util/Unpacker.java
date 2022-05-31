@@ -94,7 +94,7 @@ public class Unpacker {
 
     private static String hash(final URL source) {
         try {
-            final DigestOutputStream out = Hash.nopOut(Hash.Algorithm.MD5);
+            final DigestOutputStream out = Hash.digestOut(Hash.Algorithm.MD5);
             IOUtils.flow(source.openStream(), out, true, true);
             return Hex.encode(out.getMessageDigest().digest());
         } catch (final IOException ioe) {
