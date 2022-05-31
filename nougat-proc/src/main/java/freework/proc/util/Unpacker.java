@@ -15,7 +15,7 @@ import java.security.DigestOutputStream;
 public class Unpacker {
     private static final String UNPACK_TO_PARENT_DIR = "unpack.to.parent.dir";
 
-    public static File unpack(final URL source) {
+    private static File unpack(final URL source) {
         if (null == source) {
             return null;
         }
@@ -78,6 +78,18 @@ public class Unpacker {
         }
     }
 
+    public static void unpackTo(final URL source, final File target) {
+        if (!target.exists()) {
+            final File dir = target.getParentFile();
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new IllegalStateException("Cannot create dir: " + dir);
+            }
+            copy(source, target);
+        } else {
+//            final String sourceHash = hash(source);
+//            final String targetHash = hash(target);
+        }
+    }
 
     private static String filename(final String path) {
         final int i = path.lastIndexOf('/');
@@ -96,6 +108,16 @@ public class Unpacker {
         try {
             final DigestOutputStream out = Hash.digestOut(Hash.Algorithm.MD5);
             IOUtils.flow(source.openStream(), out, true, true);
+            return Hex.encode(out.getMessageDigest().digest());
+        } catch (final IOException ioe) {
+            throw new IllegalStateException("failed to checksum " + source + ": " + ioe.getMessage(), ioe);
+        }
+    }
+
+    private static String hash(final File source) {
+        try {
+            final DigestOutputStream out = Hash.digestOut(Hash.Algorithm.MD5);
+            IOUtils.flow(new FileInputStream(source), out, true, true);
             return Hex.encode(out.getMessageDigest().digest());
         } catch (final IOException ioe) {
             throw new IllegalStateException("failed to checksum " + source + ": " + ioe.getMessage(), ioe);
