@@ -13,7 +13,8 @@
 
     <properties>
         <!-- 4.1 must jdk 1.7, 4.0 jdk 1.6 但是总报错 -->
-        <jna.version>3.4.0</jna.version>
+        <jna.version>4.5.1</jna.version>
+        <!--<jna.version>3.4.0</jna.version>-->
         <winp.version>1.19</winp.version>
     </properties>
 
@@ -51,7 +52,7 @@
         <!-- 4.0 之前 platform -->
         <dependency>
             <groupId>net.java.dev.jna</groupId>
-            <artifactId>platform</artifactId>
+            <artifactId>jna-platform</artifactId>
             <version>${jna.version}</version>
         </dependency>
         <!-- JNA end -->

@@ -24,8 +24,8 @@ import java.util.Arrays;
  * Example1:
  * ----------------------
  * final String transformation = "AES/CBC/PKCS5Padding";
- * final SecretKey secretKey = Crypt.newSymmetricKey(transformation);
- * final Crypt crypt = Crypt.getSymmetric(transformation, secretKey);
+ * final SecretKey secretKey = Crypto.newSymmetricKey(transformation);
+ * final Crypto crypt = Crypto.getSymmetric(transformation, secretKey);
  * final String encrypted = crypt.encrypt("111111");
  * System.out.println(encrypted);
  *
@@ -40,7 +40,7 @@ import java.util.Arrays;
  * final SecretKey secretKey = new SecretKeySpec(key.getEncoded(), "AES");
  * final IvParameterSpec ivParameterSpec = new IvParameterSpec(Hex.decode(iv));
  *
- * final Crypt crypt = Crypt.getSymmetric("AES/CBC/PKCS5Padding", secretKey, ivParameterSpec);
+ * final Crypto crypt = Crypto.getSymmetric("AES/CBC/PKCS5Padding", secretKey, ivParameterSpec);
  * final String encrypted = crypt.encrypt("111111");
  * System.out.println(encrypted);
  * </pre>
@@ -51,7 +51,7 @@ import java.util.Arrays;
  * @since 1.0
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class Crypt {
+public abstract class Crypto {
     /**
      * @since 1.1.4
      */
@@ -89,7 +89,7 @@ public abstract class Crypt {
     /**
      * Non-instantiate.
      */
-    private Crypt() {
+    private Crypto() {
     }
 
     /**
@@ -401,7 +401,7 @@ public abstract class Crypt {
     /**
      * Symmetric encryption algorithm.
      */
-    private static class Symmetric extends Crypt {
+    private static class Symmetric extends Crypto {
         private final String transformation;
         private final SecretKey secretKey;
         private final AlgorithmParameterSpec algorithmParameterSpec;
@@ -461,7 +461,7 @@ public abstract class Crypt {
     /**
      * Asymmetric encryption algorithm.
      */
-    private static class Asymmetric extends Crypt {
+    private static class Asymmetric extends Crypto {
         private final String transformation;
         private final KeyPair key;
         private final AlgorithmParameterSpec algorithmParameterSpec;
@@ -562,7 +562,7 @@ public abstract class Crypt {
      * @param key the secret key
      * @return the symmetric crypt object
      */
-    public static Crypt getSymmetric(final SecretKey key) {
+    public static Crypto getSymmetric(final SecretKey key) {
         return getSymmetric(null, key);
     }
 
@@ -573,7 +573,7 @@ public abstract class Crypt {
      * @param bytes          the encoded secret key
      * @return the symmetric crypt object
      */
-    public static Crypt getSymmetric(final String transformation, final byte[] bytes) {
+    public static Crypto getSymmetric(final String transformation, final byte[] bytes) {
         return getSymmetric(transformation, newSymmetricKey(transformation, bytes));
     }
 
@@ -584,7 +584,7 @@ public abstract class Crypt {
      * @param secretKey      the secret key
      * @return the symmetric crypt object
      */
-    public static Crypt getSymmetric(final String transformation, final SecretKey secretKey) {
+    public static Crypto getSymmetric(final String transformation, final SecretKey secretKey) {
         return getSymmetric(transformation, secretKey, null);
     }
 
@@ -596,7 +596,7 @@ public abstract class Crypt {
      * @return the symmetric crypt object
      * @since 1.0.9
      */
-    public static Crypt getSymmetric(final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
+    public static Crypto getSymmetric(final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
         return getSymmetric(null, secretKey, algorithmParameterSpec);
     }
 
@@ -609,7 +609,7 @@ public abstract class Crypt {
      * @return the symmetric crypt object
      * @since 1.0.9
      */
-    public static Crypt getSymmetric(final String transformation, final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
+    public static Crypto getSymmetric(final String transformation, final SecretKey secretKey, final AlgorithmParameterSpec algorithmParameterSpec) {
         return new Symmetric(transformation, secretKey, algorithmParameterSpec);
     }
 
@@ -619,7 +619,7 @@ public abstract class Crypt {
      * @param key the key pair
      * @return the asymmetric crypt object
      */
-    public static Crypt getAsymmetric(final KeyPair key) {
+    public static Crypto getAsymmetric(final KeyPair key) {
         return getAsymmetric(null, key);
     }
 
@@ -631,7 +631,7 @@ public abstract class Crypt {
      * @param base64PrivateKey the base64 encoded private key
      * @return the asymmetric crypt object
      */
-    public static Crypt getAsymmetric(final String transformation, final String base64PublicKey, final String base64PrivateKey) {
+    public static Crypto getAsymmetric(final String transformation, final String base64PublicKey, final String base64PrivateKey) {
         return getAsymmetric(transformation, newAsymmetricKey(transformation, base64PublicKey, base64PrivateKey));
     }
 
@@ -643,7 +643,7 @@ public abstract class Crypt {
      * @param encodedPrivateKey the encoded private key
      * @return the asymmetric crypt object
      */
-    public static Crypt getAsymmetric(final String transformation, final byte[] encodedPublicKey, final byte[] encodedPrivateKey) {
+    public static Crypto getAsymmetric(final String transformation, final byte[] encodedPublicKey, final byte[] encodedPrivateKey) {
         return getAsymmetric(transformation, newAsymmetricKey(transformation, encodedPublicKey, encodedPrivateKey));
     }
 
@@ -654,7 +654,7 @@ public abstract class Crypt {
      * @param key            the key pair
      * @return the asymmetric crypt object
      */
-    public static Crypt getAsymmetric(final String transformation, final KeyPair key) {
+    public static Crypto getAsymmetric(final String transformation, final KeyPair key) {
         return getAsymmetric(transformation, key, null);
     }
 
@@ -666,7 +666,7 @@ public abstract class Crypt {
      * @return the asymmetric crypt object
      * @since 1.0.9
      */
-    public static Crypt getAsymmetric(final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
+    public static Crypto getAsymmetric(final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
         return getAsymmetric(null, key, algorithmParameterSpec);
     }
 
@@ -679,7 +679,7 @@ public abstract class Crypt {
      * @return the asymmetric crypt object
      * @since 1.0.9
      */
-    public static Crypt getAsymmetric(final String transformation, final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
+    public static Crypto getAsymmetric(final String transformation, final KeyPair key, final AlgorithmParameterSpec algorithmParameterSpec) {
         return new Asymmetric(transformation, key, algorithmParameterSpec);
     }
 

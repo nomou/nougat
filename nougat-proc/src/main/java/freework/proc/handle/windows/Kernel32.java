@@ -1,4 +1,4 @@
-package freework.proc.handle.jna;
+package freework.proc.handle.windows;
 
 import com.sun.jna.Native;
 import com.sun.jna.WString;
@@ -9,7 +9,7 @@ import com.sun.jna.WString;
  * @author vacoor
  */
 public interface Kernel32 extends com.sun.jna.platform.win32.Kernel32 {
-    Kernel32 KERNEL32 = (Kernel32) Native.loadLibrary("kernel32", Kernel32.class);
+    Kernel32 KERNEL32 = Native.loadLibrary("kernel32", Kernel32.class);
 
     /**
      * 获取当前进程的命令行参数.

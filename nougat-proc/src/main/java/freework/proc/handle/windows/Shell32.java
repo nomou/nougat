@@ -1,9 +1,10 @@
-package freework.proc.handle.jna;
+package freework.proc.handle.windows;
 
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.win32.W32APIOptions;
 
 /**
  * Windows shell32.
@@ -12,7 +13,7 @@ import com.sun.jna.ptr.IntByReference;
  * @since 1.0
  */
 public interface Shell32 extends com.sun.jna.platform.win32.Shell32 {
-    Shell32 SHELL32 = (Shell32) Native.loadLibrary("shell32", Shell32.class);
+    Shell32 SHELL32 = Native.loadLibrary("shell32", Shell32.class, W32APIOptions.DEFAULT_OPTIONS);
 
     /**
      * 解析Unicode命令行字符串.

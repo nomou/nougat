@@ -1,9 +1,10 @@
-package freework.proc.handle;
+package freework.proc.handle.windows;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.platform.win32.WinNT;
 import com.sun.jna.ptr.IntByReference;
+import freework.proc.handle.Handle;
 import org.jvnet.winp.WinProcess;
 import org.jvnet.winp.WinpException;
 
@@ -11,8 +12,8 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
-import static freework.proc.handle.jna.Kernel32.KERNEL32;
-import static freework.proc.handle.jna.Shell32.SHELL32;
+import static freework.proc.handle.windows.Kernel32.KERNEL32;
+import static freework.proc.handle.windows.Shell32.SHELL32;
 
 class WindowsHandle extends Handle {
     private static final WindowsHandle JVM = new WindowsHandle(getJvmPid());
@@ -118,58 +119,8 @@ class WindowsHandle extends Handle {
                 KERNEL32.LocalFree(argvPtr);
             }
         } catch (final WinpException ex) {
+            // XXX return null ?
             return null;
-        }
-    }
-
-    private static class InfoImpl implements Info {
-        private final String cmdline;
-        private final String command;
-        private final String[] arguments;
-
-        private InfoImpl(String cmdline, String command, String[] arguments) {
-            this.cmdline = cmdline;
-            this.command = command;
-            this.arguments = arguments;
-        }
-
-        @Override
-        public String command() {
-            return command;
-        }
-
-        @Override
-        public String[] arguments() {
-            return arguments;
-        }
-
-        @Override
-        public String toString() {
-            final StringBuilder buff = new StringBuilder(60);
-            buff.append('[');
-            if (null != command) {
-                if (buff.length() > 1) {
-                    buff.append(", ");
-                }
-                buff.append("cmd: ");
-                buff.append(command);
-            }
-            if (null != arguments && arguments.length > 0) {
-                if (buff.length() > 1) {
-                    buff.append(", ");
-                }
-                buff.append("args: ");
-                buff.append(Arrays.toString(arguments));
-            }
-            if (null != cmdline) {
-                if (buff.length() > 1) {
-                    buff.append(", ");
-                }
-                buff.append("cmdLine: ");
-                buff.append(cmdline);
-            }
-            buff.append(']');
-            return buff.toString();
         }
     }
 

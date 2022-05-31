@@ -5,7 +5,7 @@ import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.StringArray;
 import com.sun.jna.ptr.IntByReference;
-import freework.proc.handle.Cmdline;
+import freework.proc.handle.Handle;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,12 +15,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static freework.proc.handle.jna.CLibrary.FD_CLOEXEC;
-import static freework.proc.handle.jna.CLibrary.F_GETFD;
-import static freework.proc.handle.jna.CLibrary.F_SETFD;
-import static freework.proc.handle.jna.CLibrary.LIBC;
-import static freework.proc.handle.jna.Kernel32.KERNEL32;
-import static freework.proc.handle.jna.Shell32.SHELL32;
+import static freework.proc.handle.unix.LibraryC.FD_CLOEXEC;
+import static freework.proc.handle.unix.LibraryC.F_GETFD;
+import static freework.proc.handle.unix.LibraryC.F_SETFD;
+import static freework.proc.handle.unix.LibraryC.LIBC;
+import static freework.proc.handle.windows.Kernel32.KERNEL32;
+import static freework.proc.handle.windows.Shell32.SHELL32;
 
 /**
  * 未完成.
@@ -220,7 +220,7 @@ class Restarter {
         });
     }
 
-    private static void restartOnUnix(final String... beforeRestart) throws IOException {
+    static void restartOnUnix(final String... beforeRestart) throws IOException {
         // close all files upon exec, except stdin, stdout, and stderr
         final int size = LIBC.getdtablesize();
         for (int i = 3; i < size; i++) {
@@ -231,10 +231,16 @@ class Restarter {
             LIBC.fcntl(i, F_SETFD, flags | FD_CLOEXEC);
         }
 
-        final String exe = ProcessUtils.getJvmExecutable();
-        final List<String> args = Cmdline.resolve(ProcessUtils.getJvmPid());
+        final Handle handle = Handle.current();
+        final Handle.Info info = handle.info();
+        final String exe = info.command();
+        final String[] args = info.arguments();
+        final String[] argsToUse = new String[args.length + 1];
+        argsToUse[0] = exe;
+        System.arraycopy(args, 0, argsToUse, 1, args.length);
+
         // stop current process and exec to self replace current process
-        LIBC.execv(exe, new StringArray(args.toArray(new String[args.size()])));
+        LIBC.execv(exe, new StringArray(argsToUse));
 
         // 因为要在重启前执行相关命令, 因此使用停止当前进程并使用 restarter.sh 替代当前进程
         // 传递给 restarter.sh 的参数为 current_program_cmdline
@@ -263,8 +269,12 @@ class Restarter {
         if (!restarter.setExecutable(true, true)) {
             throw new IOException("Cannot make file executable: " + restarter);
         }
-        args.add(0, program);
-        LIBC.execv(program, new StringArray(args.toArray(new String[args.size()])));
+
+        final String[] argsToUse2 = new String[argsToUse.length + 1];
+        argsToUse[0] = program;
+        System.arraycopy(argsToUse, 0, argsToUse2, 1, argsToUse.length);
+
+        LIBC.execv(program, new StringArray(argsToUse2));
 
         throw new IOException("Failed to exec '" + exe + "' " + LIBC.strerror(Native.getLastError()));
     }

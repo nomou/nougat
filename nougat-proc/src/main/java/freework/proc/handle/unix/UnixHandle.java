@@ -1,25 +1,23 @@
-package freework.proc.handle;
+package freework.proc.handle.unix;
 
-import freework.proc.handle.jna.CLibrary;
+import freework.proc.handle.Handle;
 
 import java.lang.reflect.Field;
 
-import static freework.proc.handle.jna.CLibrary.LIBC;
+import static freework.proc.handle.unix.LibraryC.LIBC;
 
 /**
  * UNIX 进程操作句柄.
  */
-class UnixHandle extends Handle {
-    private static final UnixHandle JVM = new UnixHandle(getJvmPid());
-
+abstract class UnixHandle extends Handle {
     private final int pid;
     private final Process process;
 
-    private UnixHandle(final int pid) {
+    UnixHandle(final int pid) {
         this(pid, null);
     }
 
-    private UnixHandle(final int pid, final Process process) {
+    UnixHandle(final int pid, final Process process) {
         this.pid = pid;
         this.process = process;
     }
@@ -31,26 +29,12 @@ class UnixHandle extends Handle {
 
     @Override
     public boolean isAlive() {
-        if (null == process) {
-            return 0 == kill(pid, 0);
-        }
-        if (null != process) {
-            // return process.isAlive();
-        }
-        return false;
+        return 0 == kill(pid, 0);
     }
 
     @Override
     public boolean kill() {
-        if (null != process) {
-            try {
-                process.destroy();
-                return 0 == process.waitFor();
-            } catch (final InterruptedException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-        return 0 == kill(pid, CLibrary.SIGTERM);
+        return 0 == kill(pid, LibraryC.SIGTERM);
     }
 
     @Override
@@ -64,14 +48,17 @@ class UnixHandle extends Handle {
                 throw new IllegalStateException(e);
             }
         }
-        return 0 == kill(pid(), CLibrary.SIGKILL);
+        return 0 == kill(pid(), LibraryC.SIGKILL);
     }
 
     @Override
     public Info info() {
-        return null;
+        return info(pid);
     }
 
+    protected abstract Info info(final int pid);
+
+    /*
     public static UnixHandle current() {
         return JVM;
     }
@@ -83,19 +70,22 @@ class UnixHandle extends Handle {
     public static UnixHandle of(final Process process) {
         return new UnixHandle(getUnixPid(process), process);
     }
+    */
 
     /* ********** */
 
-    private static int getJvmPid() {
-        return CLibrary.LIBC.getpid();
+    static int getJvmPid() {
+        return LibraryC.LIBC.getpid();
     }
 
-    private static int kill(final int pid, final int signal) {
+    static int kill(final int pid, final int signal) {
         return LIBC.kill(pid, signal);
     }
 
     /*
     private static void readCmdlineOnUnix(final int pid) {
+        final String cmdline = readFile(new File("/proc/" + pid + "/cmdline"));
+        return Arrays.asList(cmdline.split("\0"));
         final File cmdlineFile = new File("/proc/" + pid + "/cmdline");
         try {
             final String cmdline = IOUtils.toString(new FileInputStream(cmdlineFile), StandardCharsets.UTF_8, true);
@@ -108,7 +98,7 @@ class UnixHandle extends Handle {
 
     private static final String UNIX_PROCESS_CLASS = "java.lang.UNIXProcess";
 
-    private static int getUnixPid(final Process proc) {
+    static int getUnixPid(final Process proc) {
         final Class<? extends Process> clazz = proc.getClass();
         try {
             final Field pidField = clazz.getDeclaredField("pid");
@@ -121,4 +111,7 @@ class UnixHandle extends Handle {
             throw new UnsupportedOperationException("unix process not supported: " + clazz, ex);
         }
     }
+
+
+    /* ****** */
 }

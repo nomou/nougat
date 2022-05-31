@@ -1,18 +1,16 @@
-package freework.proc.handle;
+package freework.proc.handle.unix;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.ptr.IntByReference;
-import freework.proc.handle.jna.CLibrary;
+import freework.proc.handle.Handle;
 
-import java.io.ByteArrayOutputStream;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Arrays;
 
 import static com.sun.jna.Pointer.NULL;
-import static freework.proc.handle.jna.CLibrary.LIBC;
+import static freework.proc.handle.unix.LibraryC.LIBC;
 
-public class MaxArgResolver {
+public class MacHandle extends UnixHandle {
     /**
      * Mac support.
      * <p/>
@@ -35,21 +33,29 @@ public class MaxArgResolver {
     private static final int KERN_ARGMAX = 8;
     private static final int KERN_PROCARGS2 = 49;
     private static final int SIZE_OF_INT = Native.getNativeSize(int.class);
+    private static final MacHandle JVM = of(getJvmPid());
 
-    public static List<String> args(final int pid) {
+    private MacHandle(final int pid) {
+        super(pid);
+    }
+
+    private MacHandle(final int pid, final Process process) {
+        super(pid, process);
+    }
+
+    @Override
+    public Handle.Info info(final int pid) {
         final IntByReference ref = new IntByReference();
-        final IntByReference argMaxRef = new IntByReference(0);
+        final IntByReference sysctlArgMaxRef = new IntByReference();
         final IntByReference size = new IntByReference(SIZE_OF_INT);
-        if (0 != LIBC.sysctl(new int[]{CTL_KERN, KERN_ARGMAX}, 2, argMaxRef.getPointer(), size, NULL, ref)) {
+        if (0 != LIBC.sysctl(new int[]{CTL_KERN, KERN_ARGMAX}, 2, sysctlArgMaxRef.getPointer(), size, NULL, ref)) {
             throw new UnsupportedOperationException("Failed to get kernl.argmax: " + LIBC.strerror(Native.getLastError()));
         }
 
-        final int argMax = argMaxRef.getValue();
-        System.out.println("argmax = " + argMax);
-
-        final ArgsPointer memory = new ArgsPointer(argMax);
-        size.setValue(argMax);
-        if (0 != CLibrary.LIBC.sysctl(new int[]{CTL_KERN, KERN_PROCARGS2, pid}, 3, memory, size, NULL, ref)) {
+        final int sysctlArgMax = sysctlArgMaxRef.getValue();
+        final Memory memory = new Memory(sysctlArgMax);
+        size.setValue(sysctlArgMax);
+        if (0 != LibraryC.LIBC.sysctl(new int[]{CTL_KERN, KERN_PROCARGS2, pid}, 3, memory, size, NULL, ref)) {
             throw new UnsupportedOperationException("Failed to obtain ken.procargs2: " + LIBC.strerror(Native.getLastError()));
         }
 
@@ -92,61 +98,54 @@ public class MaxArgResolver {
          * :               :
          * \---------------/ 0xffffffff
          */
-        final int nArgs = memory.readInt();
+        final int nArgs = memory.getInt(0);
 
-        // exec path
-        memory.readString();
-        final List<String> args = new LinkedList<>();
+        int offset = SIZE_OF_INT;
+        // skip exec path.
+        while ('\0' != memory.getByte(offset)) {
+            offset++;
+        }
+
+        final String[] args = new String[nArgs];
         for (int i = 0; i < nArgs; i++) {
-            memory.skip0();
-            args.add(memory.readString());
-        }
-
-        /*-
-         * this is how you can read environment variables
-         * while (0 != memory.peek()) {
-         *    args.add(memory.readString());
-         * }
-         */
-        return args;
-    }
-
-    private static class ArgsPointer extends Memory {
-        private long offset = 0;
-
-        ArgsPointer(final long size) {
-            super(size);
-        }
-
-        int readInt() {
-            final int r = getInt(offset);
-            offset += SIZE_OF_INT;
-            return r;
-        }
-
-        byte peek() {
-            return getByte(offset);
-        }
-
-        String readString() {
-            byte c;
-            final ByteArrayOutputStream buff = new ByteArrayOutputStream(1024);
-            while ('\0' != (c = getByte(offset++))) {
-                buff.write(c);
-            }
-            return buff.toString();
-        }
-
-        void skip0() {
             // skip trailing '\0's
-            while ('\0' == getByte(offset)) {
+            while ('\0' == memory.getByte(offset)) {
                 offset++;
             }
+
+            final int since = offset;
+            while ('\0' != memory.getByte(offset++)) {
+                ;//
+            }
+            args[i] = memory.getString(since);
         }
+
+        /*
+         * this is how you can read environment variables
+         */
+        /*
+        while ('\0' != memory.getByte(++offset)) {
+            final int since = offset;
+            while ('\0' != memory.getByte(offset)) {
+                offset++;
+            }
+            String string = memory.getString(since);
+            System.out.println(string);
+        }
+        */
+        return new Handle.InfoImpl(null, args[0], Arrays.copyOfRange(args, 1, args.length));
     }
 
-    public static void main(String[] args) {
-        final int pid = UnixHandle.current().pid();
-        System.out.println(args(pid));
+    public static MacHandle current() {
+        return JVM;
     }
+
+    public static MacHandle of(final int pid) {
+        return new MacHandle(pid);
+    }
+
+    public static MacHandle of(final Process process) {
+        return new MacHandle(getUnixPid(process), process);
+    }
+
 }

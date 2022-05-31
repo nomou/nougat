@@ -19,8 +19,8 @@ public class CryptorTest {
 
     @Test
     public void testRsa() throws IOException {
-        final KeyPair keyPair = Crypt.newAsymmetricKey("RSA");
-        final Crypt asymmetry = Crypt.getAsymmetric(keyPair);
+        final KeyPair keyPair = Crypto.newAsymmetricKey("RSA");
+        final Crypto asymmetry = Crypto.getAsymmetric(keyPair);
         final String plainText = "This is plain text";
         final String encrypt = asymmetry.encrypt(plainText);
         final String decrypt = asymmetry.decrypt(encrypt);

@@ -1,6 +1,6 @@
 package freework.crypto;
 
-import freework.crypto.cipher.Crypt;
+import freework.crypto.cipher.Crypto;
 
 import java.security.*;
 import java.security.cert.Certificate;
@@ -9,8 +9,8 @@ import java.security.cert.Certificate;
  * Digital signatures for authentication and integrity assurance of digital data.
  *
  * @author vacoor
- * @see Crypt#newAsymmetricKey(String)
- * @see Crypt#newSymmetricKey(String)
+ * @see Crypto#newAsymmetricKey(String)
+ * @see Crypto#newSymmetricKey(String)
  * @since 1.0
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

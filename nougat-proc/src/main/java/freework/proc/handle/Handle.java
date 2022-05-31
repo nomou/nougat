@@ -1,14 +1,10 @@
 package freework.proc.handle;
 
-import com.sun.jna.Platform;
+import java.util.Arrays;
 
 public abstract class Handle {
-    /**
-     * 是否Windows平台.
-     */
-    private static final boolean IS_WINDOWS = Platform.isWindows();
 
-    interface Info {
+    public interface Info {
 
         String command();
 
@@ -27,15 +23,65 @@ public abstract class Handle {
     public abstract Info info();
 
     public static Handle current() {
-        return IS_WINDOWS ? WindowsHandle.current() : UnixHandle.current();
+        return HandleProvider.provider().current();
     }
 
     public static Handle of(final int pid) {
-        return IS_WINDOWS ? WindowsHandle.of(pid) : UnixHandle.of(pid);
+        return HandleProvider.provider().of(pid);
     }
 
     public static Handle of(final Process process) {
-        return IS_WINDOWS ? WindowsHandle.of(process) : UnixHandle.of(process);
+        return HandleProvider.provider().of(process);
     }
 
+    protected static class InfoImpl implements Info {
+        private final String cmdline;
+        private final String command;
+        private final String[] arguments;
+
+        public InfoImpl(String cmdline, String command, String[] arguments) {
+            this.cmdline = cmdline;
+            this.command = command;
+            this.arguments = arguments;
+        }
+
+        @Override
+        public String command() {
+            return command;
+        }
+
+        @Override
+        public String[] arguments() {
+            return arguments;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder buff = new StringBuilder(60);
+            buff.append('[');
+            if (null != command) {
+                if (buff.length() > 1) {
+                    buff.append(", ");
+                }
+                buff.append("cmd: ");
+                buff.append(command);
+            }
+            if (null != arguments && arguments.length > 0) {
+                if (buff.length() > 1) {
+                    buff.append(", ");
+                }
+                buff.append("args: ");
+                buff.append(Arrays.toString(arguments));
+            }
+            if (null != cmdline) {
+                if (buff.length() > 1) {
+                    buff.append(", ");
+                }
+                buff.append("cmdLine: ");
+                buff.append(cmdline);
+            }
+            buff.append(']');
+            return buff.toString();
+        }
+    }
 }

@@ -1,10 +1,10 @@
-package freework.proc.handle.jna;
+package freework.proc.handle.unix;
 
-import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.PointerType;
 import com.sun.jna.StringArray;
+import com.sun.jna.platform.unix.LibC;
 import com.sun.jna.ptr.IntByReference;
 
 /**
@@ -15,8 +15,8 @@ import com.sun.jna.ptr.IntByReference;
  *
  * @author Kohsuke Kawaguchi
  */
-public interface CLibrary extends Library {
-    CLibrary LIBC = (CLibrary) Native.loadLibrary("c", CLibrary.class);
+public interface LibraryC extends LibC {
+    LibraryC LIBC = Native.loadLibrary("c", LibraryC.class);
 
     /**
      * 中断信号(同Ctrl+C).
@@ -75,6 +75,13 @@ public interface CLibrary extends Library {
      * @return 当前进程PID
      */
     int getpid();
+
+    /**
+     * 获取父进程ID.
+     *
+     * @return
+     */
+    int getppid();
 
     /**
      * 返回子进程文件描述符表的项数.
