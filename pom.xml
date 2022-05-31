@@ -103,6 +103,8 @@
         <slf4j.version>1.7.6</slf4j.version>
         <antisamy.version>1.5.3</antisamy.version>
         <spring.version>4.1.4.RELEASE</spring.version>
+        <winp.version>1.23</winp.version>
+        <jna.version>4.5.1</jna.version>
 
         <!-- plugin versions [[ -->
         <checkstyle.version>6.7</checkstyle.version>
@@ -169,6 +171,23 @@
                 <version>${commons.lang3.version}</version>
                 <optional>true</optional>
             </dependency>
+            <dependency>
+                <groupId>org.jvnet.winp</groupId>
+                <artifactId>winp</artifactId>
+                <version>${winp.version}</version>
+            </dependency>
+            <!-- JNA begin -->
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna-platform</artifactId>
+                <version>${jna.version}</version>
+            </dependency>
+            <!-- JNA end -->
             <!-- javax el api BEGIN -->
             <dependency>
                 <groupId>javax.el</groupId>
