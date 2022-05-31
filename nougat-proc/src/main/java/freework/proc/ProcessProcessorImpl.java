@@ -1,7 +1,6 @@
 package freework.proc;
 
 import freework.io.IOUtils;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +12,6 @@ import java.nio.charset.Charset;
  *
  * @author vacoor
  */
-//@Slf4j
 class ProcessProcessorImpl implements ProcessProcessor {
     private String errorText = null;
 

@@ -2,7 +2,7 @@ package freework.proc.handle.windows;
 
 import com.sun.jna.Platform;
 import freework.proc.handle.Handle;
-import freework.proc.handle.HandleProvider;
+import freework.proc.handle.spi.HandleProvider;
 
 public class WindowsHandleProvider extends HandleProvider {
 

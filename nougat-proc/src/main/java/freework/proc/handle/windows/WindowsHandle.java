@@ -113,7 +113,7 @@ class WindowsHandle extends Handle {
             final IntByReference argc = new IntByReference();
             final Pointer argvPtr = SHELL32.CommandLineToArgvW(new WString(cmdline), argc);
             try {
-                final String[] procArgs = argvPtr.getStringArray(0, argc.getValue(), true);
+                final String[] procArgs = argvPtr.getWideStringArray(0, argc.getValue());
                 return new InfoImpl(cmdline, procArgs[0], Arrays.copyOfRange(procArgs, 1, procArgs.length));
             } finally {
                 KERNEL32.LocalFree(argvPtr);
