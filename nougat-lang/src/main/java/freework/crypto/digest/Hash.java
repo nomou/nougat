@@ -300,6 +300,15 @@ public class Hash {
         }
     }
 
+    public static DigestOutputStream nopOut(final Algorithm algorithm) {
+        try {
+            final MessageDigest digest = MessageDigest.getInstance(algorithm.name);
+            return new DigestOutputStream(NullOutputStream.INSTANCE, digest);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     /**
      * Null output stream.
      */
