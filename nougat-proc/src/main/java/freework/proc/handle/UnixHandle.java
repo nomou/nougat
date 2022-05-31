@@ -1,14 +1,8 @@
 package freework.proc.handle;
 
-import freework.io.IOUtils;
 import freework.proc.handle.jna.CLibrary;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 import static freework.proc.handle.jna.CLibrary.LIBC;
 
@@ -16,11 +10,7 @@ import static freework.proc.handle.jna.CLibrary.LIBC;
  * UNIX 进程操作句柄.
  */
 class UnixHandle extends Handle {
-    private static final UnixHandle JVM;
-
-    static {
-        JVM = new UnixHandle(getJvmPid());
-    }
+    private static final UnixHandle JVM = new UnixHandle(getJvmPid());
 
     private final int pid;
     private final Process process;
@@ -41,10 +31,13 @@ class UnixHandle extends Handle {
 
     @Override
     public boolean isAlive() {
-        if (null != process) {
-            return process.isAlive();
+        if (null == process) {
+            return 0 == kill(pid, 0);
         }
-        return 0 == kill(pid, 0);
+        if (null != process) {
+            // return process.isAlive();
+        }
+        return false;
     }
 
     @Override
@@ -64,13 +57,19 @@ class UnixHandle extends Handle {
     public boolean killForcibly() {
         if (null != process) {
             try {
-                process.destroyForcibly();
+                // process.destroyForcibly();
+                process.destroy();
                 return 0 == process.waitFor();
             } catch (final InterruptedException e) {
                 throw new IllegalStateException(e);
             }
         }
         return 0 == kill(pid(), CLibrary.SIGKILL);
+    }
+
+    @Override
+    public Info info() {
+        return null;
     }
 
     public static UnixHandle current() {
@@ -82,17 +81,20 @@ class UnixHandle extends Handle {
     }
 
     public static UnixHandle of(final Process process) {
-        return new UnixHandle(getPidOnUnix(process), process);
+        return new UnixHandle(getUnixPid(process), process);
     }
+
+    /* ********** */
 
     private static int getJvmPid() {
         return CLibrary.LIBC.getpid();
     }
 
-    private static int kill(final int pid, final int signum) {
-        return LIBC.kill(pid, signum);
+    private static int kill(final int pid, final int signal) {
+        return LIBC.kill(pid, signal);
     }
 
+    /*
     private static void readCmdlineOnUnix(final int pid) {
         final File cmdlineFile = new File("/proc/" + pid + "/cmdline");
         try {
@@ -102,37 +104,21 @@ class UnixHandle extends Handle {
             throw new IllegalStateException(e);
         }
     }
+    */
 
     private static final String UNIX_PROCESS_CLASS = "java.lang.UNIXProcess";
 
-    private static int getPidOnUnix(final Process proc) {
+    private static int getUnixPid(final Process proc) {
         final Class<? extends Process> clazz = proc.getClass();
-        final String type = clazz.getName();
-        if (!UNIX_PROCESS_CLASS.equals(type)) {
-            throw new IllegalStateException("unsupported unix process: " + type);
-        }
-
         try {
             final Field pidField = clazz.getDeclaredField("pid");
-            if (!pidField.isAccessible()) {
-                pidField.setAccessible(true);
-            }
+            pidField.setAccessible(true);
             return (Integer) pidField.get(proc);
-        } catch (final IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        } catch (final NoSuchFieldException e) {
-            throw new IllegalStateException(e);
+        } catch (final ReflectiveOperationException ex) {
+            if (!UNIX_PROCESS_CLASS.equals(clazz.getName())) {
+                throw new IllegalStateException("process maybe not a unix process", ex);
+            }
+            throw new UnsupportedOperationException("unix process not supported: " + clazz, ex);
         }
-    }
-
-    public static void main(String[] args) throws IOException {
-//        readCmdlineOnUnix(current().pid);
-//        Cmdline resolve = Cmdline.resolve(current().pid);
-        List<String> _args = MaxArgResolver.args(current().pid);
-        System.out.println(_args);
-        ProcessHandle.Info info = ProcessHandle.current().info();
-        String s = info.command().get();
-        info.commandLine();
-        System.out.println(s);
     }
 }
