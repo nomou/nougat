@@ -13,7 +13,7 @@ import java.nio.charset.Charset;
  *
  * @author vacoor
  */
-@Slf4j
+//@Slf4j
 class ProcessProcessorImpl implements ProcessProcessor {
     private String errorText = null;
 
@@ -49,10 +49,10 @@ class ProcessProcessorImpl implements ProcessProcessor {
         if (0 != exitCode) {
             // 如果有错误输出, 则将错误输出作为异常消息
             if (null != this.errorText && 0 < this.errorText.length()) {
-                log.warn("Program error: {} ({})", errorText, command);
+//                log.warn("Program error: {} ({})", errorText, command);
                 throw new IllegalStateException(errorText);
             }
-            log.warn("Program error with exit code {} ({})", exitCode, command);
+//            log.warn("Program error with exit code {} ({})", exitCode, command);
             throw new IllegalStateException("exit code: " + exitCode);
         }
     }

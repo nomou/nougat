@@ -5,6 +5,7 @@ import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.StringArray;
 import com.sun.jna.ptr.IntByReference;
+import freework.proc.handle.Cmdline;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -14,12 +15,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static freework.proc.jna.CLibrary.FD_CLOEXEC;
-import static freework.proc.jna.CLibrary.F_GETFD;
-import static freework.proc.jna.CLibrary.F_SETFD;
-import static freework.proc.jna.CLibrary.LIBC;
-import static freework.proc.jna.Kernel32.KERNEL32;
-import static freework.proc.jna.Shell32.SHELL32;
+import static freework.proc.handle.jna.CLibrary.FD_CLOEXEC;
+import static freework.proc.handle.jna.CLibrary.F_GETFD;
+import static freework.proc.handle.jna.CLibrary.F_SETFD;
+import static freework.proc.handle.jna.CLibrary.LIBC;
+import static freework.proc.handle.jna.Kernel32.KERNEL32;
+import static freework.proc.handle.jna.Shell32.SHELL32;
 
 /**
  * 未完成.

@@ -1,4 +1,4 @@
-package freework.proc.jna;
+package freework.proc.handle.jna;
 
 import com.sun.jna.Native;
 import com.sun.jna.WString;

@@ -1,13 +1,13 @@
-package freework.proc;
+package freework.proc.handle;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.WString;
 import com.sun.jna.ptr.IntByReference;
-import freework.proc.jna.CLibrary;
-import freework.proc.jna.Kernel32;
-import freework.proc.jna.Shell32;
+import freework.proc.handle.jna.CLibrary;
+import freework.proc.handle.jna.Kernel32;
+import freework.proc.handle.jna.Shell32;
 import org.jvnet.winp.WinProcess;
 
 import java.io.ByteArrayOutputStream;
@@ -70,7 +70,7 @@ public class Cmdline extends ArrayList<String> {
     /**
      * Gets the process argument list of the specified process ID.
      *
-     * @param pid -1 to indicate the current process.
+     * @param pid -1 to indicate the getJvmPid process.
      */
     public static Cmdline resolve(int pid) throws IOException {
         String os = System.getProperty("os.name");
@@ -81,7 +81,7 @@ public class Cmdline extends ArrayList<String> {
             return resolveOnSolaris(pid);
         }
         if ("Mac OS X".equals(os)) {
-            return resolveOnMac(pid);
+//            return resolveOnMac(pid);
         }
         if ("FreeBSD".equals(os)) {
             return resolveOnFreeBSD(pid);
@@ -259,141 +259,6 @@ public class Cmdline extends ArrayList<String> {
         }
     }
 
-    /**
-     * Mac support.
-     * <p/>
-     * See http://developer.apple.com/qa/qa2001/qa1123.html
-     * http://www.osxfaq.com/man/3/kvm_getprocs.ws
-     * http://matburt.net/?p=16 (libkvm is removed from OSX)
-     * where is kinfo_proc? http://lists.apple.com/archives/xcode-users/2008/Mar/msg00781.html
-     * <p/>
-     * This code uses sysctl to get the arg/env list:
-     * http://www.psychofx.com/psi/trac/browser/psi/trunk/src/arch/macosx/macosx_process.c
-     * which came from
-     * http://www.opensource.apple.com/darwinsource/10.4.2/top-15/libtop.c
-     * <p/>
-     * sysctl is defined in libc.
-     * <p/>
-     * PS source code for Mac:
-     * http://www.opensource.apple.com/darwinsource/10.4.1/adv_cmds-79.1/ps.tproj/
-     */
-    private static Cmdline resolveOnMac(final int pid) {
-        // local constants
-        final int CTL_KERN = 1;
-        final int KERN_ARGMAX = 8;
-        final int KERN_PROCARGS2 = 49;
-        final int sizeOfInt = Native.getNativeSize(int.class);
-        final IntByReference ref = new IntByReference();
-
-
-        final IntByReference argMaxRef = new IntByReference(0);
-        final IntByReference size = new IntByReference(sizeOfInt);
-
-        /* for some reason, I was never able to get sysctlbyname work. */
-        /* if(LIBC.sysctlbyname("kern.argmax", argmaxRef.getPointer(), size, NULL, _)!=0) */
-        if (CLibrary.LIBC.sysctl(new int[]{CTL_KERN, KERN_ARGMAX}, 2, argMaxRef.getPointer(), size, NULL, ref) != 0) {
-            throw new UnsupportedOperationException("Failed to get kernl.argmax: " + CLibrary.LIBC.strerror(Native.getLastError()));
-        }
-
-        final int argmax = argMaxRef.getValue();
-        LOGGER.fine("argmax=" + argmax);
-
-        class StringArrayMemory extends Memory {
-            private long offset = 0;
-
-            StringArrayMemory(final long l) {
-                super(l);
-            }
-
-            int readInt() {
-                final int r = getInt(offset);
-                offset += sizeOfInt;
-                return r;
-            }
-
-            byte peek() {
-                return getByte(offset);
-            }
-
-            String readString() {
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte ch;
-                while ((ch = getByte(offset++)) != '\0') {
-                    baos.write(ch);
-                }
-                return baos.toString();
-            }
-
-            void skip0() {
-                // skip trailing '\0's
-                while (getByte(offset) == '\0') {
-                    offset++;
-                }
-            }
-        }
-
-        final StringArrayMemory m = new StringArrayMemory(argmax);
-        size.setValue(argmax);
-        if (CLibrary.LIBC.sysctl(new int[]{CTL_KERN, KERN_PROCARGS2, pid}, 3, m, size, NULL, ref) != 0) {
-            throw new UnsupportedOperationException("Failed to obtain ken.procargs2: " + CLibrary.LIBC.strerror(Native.getLastError()));
-        }
-
-        /*
-         * Make a sysctl() call to get the raw argument space of the
-         * process.  The layout is documented in start.s, which is part
-         * of the Csu project.  In summary, it looks like:
-         *
-         * /---------------\ 0x00000000
-         * :               :
-         * :               :
-         * |---------------|
-         * | argc          |
-         * |---------------|
-         * | arg[0]        |
-         * |---------------|
-         * :               :
-         * :               :
-         * |---------------|
-         * | arg[argc - 1] |
-         * |---------------|
-         * | 0             |
-         * |---------------|
-         * | env[0]        |
-         * |---------------|
-         * :               :
-         * :               :
-         * |---------------|
-         * | env[n]        |
-         * |---------------|
-         * | 0             |
-         * |---------------| <-- Beginning of data returned by sysctl()
-         * | exec_path     |     is here.
-         * |:::::::::::::::|
-         * |               |
-         * | String area.  |
-         * |               |
-         * |---------------| <-- Top of stack.
-         * :               :
-         * :               :
-         * \---------------/ 0xffffffff
-         */
-
-        final Cmdline args = new Cmdline();
-        final int nargs = m.readInt();
-        m.readString(); // exec path
-        for (int i = 0; i < nargs; i++) {
-            m.skip0();
-            args.add(m.readString());
-        }
-
-        /*-
-         * this is how you can read environment variables
-         * List<String> lst = new ArrayList<String>();
-         * while(m.peek()!=0)
-         *     lst.add(m.readString());
-         */
-        return args;
-    }
 
     /**
      * Seek to the specified position. This method handles offset bigger than {@link Long#MAX_VALUE} correctly.

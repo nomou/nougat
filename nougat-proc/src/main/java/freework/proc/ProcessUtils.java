@@ -3,14 +3,15 @@ package freework.proc;
 import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.WinNT;
-import freework.proc.jna.CLibrary;
+import freework.proc.handle.Cmdline;
+import freework.proc.handle.jna.CLibrary;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 
-import static freework.proc.jna.Kernel32.KERNEL32;
+import static freework.proc.handle.jna.Kernel32.KERNEL32;
 
 /**
  * 进程工具类.

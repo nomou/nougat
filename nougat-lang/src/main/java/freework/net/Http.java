@@ -15,6 +15,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.net.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -39,11 +40,6 @@ import java.util.*;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Http {
-    /**
-     * The 'UTF-8' charset.
-     */
-    public static final Charset UTF_8 = Charset.forName("UTF-8");
-
     /**
      * The 'https' schema.
      */
@@ -220,7 +216,7 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final String... params) throws IOException {
-        final String charset = UTF_8.name();
+        final String charset = StandardCharsets.UTF_8.name();
         final String ctype = "application/x-www-form-urlencoded;charset=" + charset;
         return postWithBody(httpUrlConnection, ctype, buildQuery(charset, params));
     }
@@ -237,7 +233,7 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection post(final HttpURLConnection httpUrlConnection, final Map<String, String> params) throws IOException {
-        final String charset = UTF_8.name();
+        final String charset = StandardCharsets.UTF_8.name();
         final String ctype = "application/x-www-form-urlencoded;charset=" + charset;
         return postWithBody(httpUrlConnection, ctype, buildQuery(charset, params));
     }
@@ -280,7 +276,7 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static HttpURLConnection postWithBody(final HttpURLConnection httpUrlConnection, final String ctype, final String body) throws IOException {
-        final Charset charset = determineCharset(ctype, UTF_8);
+        final Charset charset = determineCharset(ctype, StandardCharsets.UTF_8);
 
         httpUrlConnection.setRequestMethod(POST);
         httpUrlConnection.setRequestProperty("Content-Type", ctype);
@@ -297,7 +293,7 @@ public abstract class Http {
      * @return the multipart object
      */
     public static Multipart postMultipart(final HttpURLConnection httpUrlConnection) throws IOException {
-        return postMultipart(httpUrlConnection, UTF_8);
+        return postMultipart(httpUrlConnection, StandardCharsets.UTF_8);
     }
 
     /**
@@ -353,7 +349,7 @@ public abstract class Http {
      * @since 1.0.14
      */
     public static String createUrl(final String serverUrl, String... params) {
-        return createUrlWithCharset(serverUrl, UTF_8, params);
+        return createUrlWithCharset(serverUrl, StandardCharsets.UTF_8, params);
     }
 
     /**
@@ -365,7 +361,7 @@ public abstract class Http {
      * @since 1.0.14
      */
     public static String createUrl(final String serverUrl, Map<String, String> params) {
-        return createUrlWithCharset(serverUrl, UTF_8, params);
+        return createUrlWithCharset(serverUrl, StandardCharsets.UTF_8, params);
     }
 
     /**
@@ -378,7 +374,7 @@ public abstract class Http {
      * @since 1.0.14
      */
     public static String createUrlWithCharset(final String serverUrl, final Charset charset, final String... params) {
-        return createUrlWithQuery(serverUrl, buildQuery((null != charset ? charset.name() : UTF_8.name()), params));
+        return createUrlWithQuery(serverUrl, buildQuery((null != charset ? charset.name() : StandardCharsets.UTF_8.name()), params));
     }
 
     /**
@@ -391,7 +387,7 @@ public abstract class Http {
      * @since 1.0.14
      */
     public static String createUrlWithCharset(final String serverUrl, final Charset charset, final Map<String, String> params) {
-        return createUrlWithQuery(serverUrl, buildQuery((null != charset ? charset.name() : UTF_8.name()), params));
+        return createUrlWithQuery(serverUrl, buildQuery((null != charset ? charset.name() : StandardCharsets.UTF_8.name()), params));
     }
 
     /**
@@ -602,7 +598,7 @@ public abstract class Http {
      * @throws IOException if an I/O error occurs
      */
     public static String getResponseBodyAsString(final HttpURLConnection httpUrlConnection) throws IOException {
-        final Charset charset = getResponseCharset(httpUrlConnection, UTF_8);
+        final Charset charset = getResponseCharset(httpUrlConnection, StandardCharsets.UTF_8);
         final InputStream es = httpUrlConnection.getErrorStream();
 
         if (null != es) {
@@ -675,7 +671,7 @@ public abstract class Http {
         final InputStream es = httpUrlConnection.getErrorStream();
 
         if (null != es) {
-            final Charset charset = getResponseCharset(httpUrlConnection, UTF_8);
+            final Charset charset = getResponseCharset(httpUrlConnection, StandardCharsets.UTF_8);
             final String msg = getStreamAsString(es, charset);
             if (msg.isEmpty()) {
                 throw new IOException(responseCode + '(' + contentType + "):" + httpUrlConnection.getResponseMessage());
