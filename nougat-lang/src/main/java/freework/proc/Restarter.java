@@ -95,6 +95,7 @@ public class Restarter {
      * @throws IOException 如果重启指令出错抛出该异常
      */
     private static void restartOnMac(final String... beforeRestart) throws IOException {
+        System.out.println(Handle.current().info());
         // FIXME
 //        final String bundle = "/Applications/Developer Tools/IntelliJ IDEA.app";
         final String bundle = "/Applications/QQ.app";
