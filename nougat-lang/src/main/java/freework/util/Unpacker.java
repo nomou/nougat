@@ -35,7 +35,7 @@ public class Unpacker {
             throw new IllegalArgumentException("source must not be null");
         }
         final String url = source.toExternalForm();
-        final boolean hasDirectory = useJarDirectory && null != directory;
+        final boolean hasDirectory = useJarDirectory || null != directory;
         if (hasDirectory && (url.startsWith("jar:") || url.startsWith("wsjar:"))) {
             /*-
              * jar 文件且是解压到固定目录.
@@ -64,7 +64,7 @@ public class Unpacker {
 
                 final File jarFile = new File(decode(jarPath));
                 final String nameToUse = hash(source) + '.' + filename(url);
-                final File targetFile = new File(null != directory ? directory : jarFile.getParentFile(), nameToUse);
+                final File targetFile = new File(!useJarDirectory && null != directory ? directory : jarFile.getParentFile(), nameToUse);
                 if (!targetFile.exists()) {
                     copy(source, targetFile);
                 }
@@ -84,7 +84,7 @@ public class Unpacker {
          * 非文件系统, 且不是解压到固定目录.
          */
         try {
-            final File tempFile = File.createTempFile("unpack", filename(url));
+            final File tempFile = File.createTempFile("unpack.", filename(url));
             tempFile.deleteOnExit();
             copy(source, tempFile);
             return tempFile;

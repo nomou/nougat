@@ -45,11 +45,12 @@ public class Restarter {
                 restartOnMac(beforeRestart); */
             } else if (Platform.isLinux()) {
                 restartOnUnix(beforeRestart);
+            } else {
+                throw new IOException("cannot restart application: not supported.");
             }
         } catch (final Throwable t) {
             throw new IOException("cannot restart application: " + t.getMessage(), t);
         }
-        throw new IOException("cannot restart application: not supported.");
     }
 
     /**
@@ -68,8 +69,11 @@ public class Restarter {
             doScheduleRestart(getRestarterBin(), new Consumer<List<String>>() {
                 @Override
                 public void accept(final List<String> commands) {
-                    Collections.addAll(commands, String.valueOf(pid), String.valueOf(beforeRestart.length));
+                    Collections.addAll(commands, String.valueOf(pid));
+
+                    Collections.addAll(commands, String.valueOf(beforeRestart.length));
                     Collections.addAll(commands, beforeRestart);
+
                     Collections.addAll(commands, String.valueOf(argc.getValue()));
                     Collections.addAll(commands, argv);
                 }
@@ -116,9 +120,12 @@ public class Restarter {
 
     private static void doScheduleRestart(final File restarterBin, final Consumer<List<String>> args) throws IOException {
         final List<String> commands = new ArrayList<String>();
-        commands.add(restarterBin.getPath());
+        commands.add(restarterBin.getAbsolutePath());
         args.accept(commands);
-        Runtime.getRuntime().exec(commands.toArray(new String[commands.size()]));
+        System.out.println(commands);
+        Process exec = Runtime.getRuntime().exec(commands.toArray(new String[commands.size()]));
+        Threads.sleep(2000);
+        System.out.println(Handle.of(exec).isAlive());
     }
 
     private static void restartOnUnix(final String... beforeRestart) throws IOException {
@@ -222,13 +229,13 @@ public class Restarter {
     }
 
     public static void main(String[] args) throws Exception {
-        args = new String[]{"log.log", "2022-06-01 16:30:00"};
+        // args = new String[]{"log.log", "2022-06-01 16:30:00"};
         System.out.println(System.getProperty("os.name"));
-        final FileWriter writer = new FileWriter(args[0], true);
-        writer.write(System.currentTimeMillis() + ": OK\r\n");
-        IOUtils.close(writer);
         Date parse = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(args[1]);
         if (parse.getTime() > System.currentTimeMillis()) {
+            final FileWriter writer = new FileWriter(args[0], true);
+            writer.write(System.currentTimeMillis() + ": OK\r\n");
+            IOUtils.close(writer);
             Threads.sleep(1000);
             scheduleRestart();
         }

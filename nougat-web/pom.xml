@@ -11,7 +11,7 @@
 
     <artifactId>nougat-web</artifactId>
 
-    <name>nougat-web-lang</name>
+    <name>nougat-web</name>
     <description>Web util</description>
 
     <dependencies>
