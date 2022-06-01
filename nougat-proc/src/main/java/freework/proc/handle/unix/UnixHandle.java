@@ -1,15 +1,21 @@
 package freework.proc.handle.unix;
 
+import freework.io.IOUtils;
 import freework.proc.handle.Handle;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 import static freework.proc.handle.unix.LibraryC.LIBC;
 
 /**
  * UNIX 进程操作句柄.
  */
-abstract class UnixHandle extends Handle {
+class UnixHandle extends Handle {
+    private static final UnixHandle JVM = of(getJvmPid());
     private final int pid;
     private final Process process;
 
@@ -56,9 +62,20 @@ abstract class UnixHandle extends Handle {
         return isAlive() ? info(pid) : null;
     }
 
-    protected abstract Info info(final int pid);
+    protected Info info(final int pid) {
+        final File cmdline = new File("/proc/" + pid + "/cmdline");
+        if (!cmdline.exists()) {
+            throw new UnsupportedOperationException("/proc/" + pid + "/cmdline not found");
+        }
+        try {
+            final String cmdlineStr = IOUtils.toString(new FileReader(cmdline), true);
+            final String[] segments = cmdlineStr.split("\0");
+            return new InfoImpl(cmdlineStr, segments[0], Arrays.copyOfRange(segments, 1, segments.length));
+        } catch (final IOException e) {
+            throw new IllegalStateException("Can not read cmdline: " + cmdline);
+        }
+    }
 
-    /*
     public static UnixHandle current() {
         return JVM;
     }
@@ -70,7 +87,6 @@ abstract class UnixHandle extends Handle {
     public static UnixHandle of(final Process process) {
         return new UnixHandle(getUnixPid(process), process);
     }
-    */
 
     /* ********** */
 
@@ -81,20 +97,6 @@ abstract class UnixHandle extends Handle {
     static int kill(final int pid, final int signal) {
         return LIBC.kill(pid, signal);
     }
-
-    /*
-    private static void readCmdlineOnUnix(final int pid) {
-        final String cmdline = readFile(new File("/proc/" + pid + "/cmdline"));
-        return Arrays.asList(cmdline.split("\0"));
-        final File cmdlineFile = new File("/proc/" + pid + "/cmdline");
-        try {
-            final String cmdline = IOUtils.toString(new FileInputStream(cmdlineFile), StandardCharsets.UTF_8, true);
-            System.out.println(cmdline);
-        } catch (final IOException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-    */
 
     private static final String UNIX_PROCESS_CLASS = "java.lang.UNIXProcess";
 

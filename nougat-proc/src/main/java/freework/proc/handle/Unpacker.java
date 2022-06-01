@@ -1,10 +1,14 @@
-package freework.proc.util;
+package freework.proc.handle;
 
 import freework.codec.Hex;
 import freework.crypto.digest.Hash;
 import freework.io.IOUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -12,16 +16,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.DigestOutputStream;
 
-public class Unpacker {
-    private static final String UNPACK_TO_PARENT_DIR = "unpack.to.parent.dir";
+class Unpacker {
 
-    private static File unpack(final URL source) {
+    static File unpack(final URL source) {
+        return unpackToDirectory(source, null);
+    }
+
+    static File unpackToDirectory(final URL source, final File directory) {
         if (null == source) {
-            return null;
+            throw new IllegalArgumentException("source must not be null");
         }
         final String url = source.toExternalForm();
-        final boolean unpackToParent = Boolean.parseBoolean(System.getProperty(UNPACK_TO_PARENT_DIR, "true"));
-        if (unpackToParent && (url.startsWith("jar:") || url.startsWith("wsjar:"))) {
+        if (url.startsWith("jar:") || url.startsWith("wsjar:")) {
             /*-
              * jar 文件且是解压到固定目录.
              * jar:file:/path.jar!path_in_jar
@@ -48,8 +54,8 @@ public class Unpacker {
                 }
 
                 final File jarFile = new File(decode(jarPath));
-                final String filename = hash(source) + '.' + filename(url);
-                final File targetFile = new File(jarFile.getParentFile(), filename);
+                final String nameToUse = hash(source) + '.' + filename(url);
+                final File targetFile = new File(null != directory ? directory : jarFile.getParentFile(), nameToUse);
                 if (!targetFile.exists()) {
                     copy(source, targetFile);
                 }
@@ -78,19 +84,6 @@ public class Unpacker {
         }
     }
 
-    public static void unpackTo(final URL source, final File target) {
-        if (!target.exists()) {
-            final File dir = target.getParentFile();
-            if (!dir.exists() && !dir.mkdirs()) {
-                throw new IllegalStateException("Cannot create dir: " + dir);
-            }
-            copy(source, target);
-        } else {
-//            final String sourceHash = hash(source);
-//            final String targetHash = hash(target);
-        }
-    }
-
     private static String filename(final String path) {
         final int i = path.lastIndexOf('/');
         return path.substring(i + 1);
@@ -98,6 +91,10 @@ public class Unpacker {
 
     private static void copy(final URL source, final File target) {
         try {
+            final File directory = target.getParentFile();
+            if (!directory.exists() && !directory.mkdirs()) {
+                throw new IllegalStateException("Cannot create directory: " + directory);
+            }
             IOUtils.flow(source.openStream(), new FileOutputStream(target), true, true);
         } catch (final IOException ioe) {
             throw new IllegalStateException("failed to copy resource " + source + ": " + ioe.getMessage(), ioe);
@@ -130,11 +127,5 @@ public class Unpacker {
         } catch (final UnsupportedEncodingException e) {
             throw new UnsupportedCharsetException(StandardCharsets.UTF_8.name());
         }
-    }
-
-    public static void main(String[] args) {
-        final URL url = Unpacker.class.getResource("/com/sun/jna/darwin/libjnidispatch.jnilib");
-        final File unpackFile = unpack(url);
-        System.out.println(unpackFile);
     }
 }

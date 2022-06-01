@@ -1,4 +1,5 @@
 freework.proc.handle.unix.MacHandleProvider
 freework.proc.handle.unix.FreebsdHandleProvider
 freework.proc.handle.unix.SolarisHandleProvider
+freework.proc.handle.unix.UnixHandleProvider
 freework.proc.handle.windows.WindowsHandleProvider
