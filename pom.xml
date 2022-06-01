@@ -15,7 +15,6 @@
 
     <modules>
         <module>nougat-lang</module>
-        <module>nougat-proc</module>
         <module>nougat-web</module>
         <module>nougat-misc</module>
     </modules>

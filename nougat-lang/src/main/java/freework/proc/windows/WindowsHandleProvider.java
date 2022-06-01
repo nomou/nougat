@@ -1,0 +1,29 @@
+package freework.proc.windows;
+
+import com.sun.jna.Platform;
+import freework.proc.Handle;
+import freework.proc.spi.HandleProvider;
+
+public class WindowsHandleProvider extends HandleProvider {
+
+    @Override
+    public boolean isSupported() {
+        return Platform.isWindows();
+    }
+
+    @Override
+    public Handle current() {
+        return WindowsHandle.current();
+    }
+
+    @Override
+    public Handle of(final int pid) {
+        return WindowsHandle.of(pid);
+    }
+
+    @Override
+    public Handle of(final Process process) {
+        return WindowsHandle.of(process);
+    }
+
+}

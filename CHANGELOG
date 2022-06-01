@@ -1,6 +1,7 @@
 # 1.0.15
-1. 重构 proc 工具类
-2. 修改 Crypt -> Crypto
+1. 修改 Crypt -> Crypto
+2. 重构/精简 proc 相关类, 并移动到 lang 中
+3. 删除用处不大的类、包、模块
 
 # 1.0.14
 1. Http.postMultipart 自动 setDoOutput(true)

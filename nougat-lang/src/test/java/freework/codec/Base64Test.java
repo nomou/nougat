@@ -1,11 +1,14 @@
 package freework.codec;
 
 import freework.io.IOUtils;
+import freework.net.Http;
 import org.junit.Test;
 
+import javax.json.JsonObject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -108,5 +111,23 @@ public class Base64Test {
         // [-52, 90, -116, -124, 56, 0, 0]
         System.out.println(Arrays.toString(jdkDecodeOut.toByteArray()));
         */
+    }
+
+    public static void main(String[] args) throws IOException {
+        final int count = 384;
+        HttpURLConnection httpUrlConnection = null;
+        try {
+            httpUrlConnection = Http.open("http://pc-v3.baozun.com/platform/seq/code/generate", "POST");
+            httpUrlConnection.setRequestProperty("Cookie", "experimentation_subject_id=IjdiMTIzMmE4LTY5NWQtNDA5Mi05NzVlLWNjODBhZjY0MjgwMiI%3D--63cbf2c371605efc2e89e673857a3263274e7322; TOKEN=1374l4b; UACAPPKEY=platform-vue-prod; orgId_25120=493");
+            httpUrlConnection = Http.post(httpUrlConnection, "application/json", "{\"id\":1077,\"customer\":\"om\",\"entityMark\":\"com.baozun.eca.om.model.NikeReferenceNo\",\"groupCode\":null,\"startWith\":\"A\",\"endWith\":null,\"count\":" + count + "}");
+            final JsonObject responseBody = (JsonObject) Http.getResponseBodyAsJson(httpUrlConnection);
+            final String all = responseBody.getString("data");
+            final String[] segments = all.split("\\s*,\\s*");
+            for (final String segment : segments) {
+                System.out.println(segment);
+            }
+        } finally {
+            Http.close(httpUrlConnection);
+        }
     }
 }

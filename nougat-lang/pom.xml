@@ -64,6 +64,22 @@
             <optional>true</optional>
         </dependency>
         <!-- proxy lib END -->
+
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.jvnet.winp</groupId>
+            <artifactId>winp</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
 </project>
