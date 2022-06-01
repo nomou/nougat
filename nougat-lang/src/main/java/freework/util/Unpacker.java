@@ -19,18 +19,18 @@ import java.security.DigestOutputStream;
 public class Unpacker {
 
     public static File unpackAsTempFile(final URL source) {
-        return unpackToDirectory(source, null);
+        return unpackToDirectory(source, null, false);
     }
 
-    public static File unpackToDirectory(final URL source, final File directory) {
-        return unpackToDirectory(source, false, directory);
+    public static File unpackToDirectory(final URL source, final File directory, final boolean hash) {
+        return unpackToDirectory(source, false, directory, hash);
     }
 
-    public static File unpackToJarDirectory(final URL source) {
-        return unpackToDirectory(source, true, null);
+    public static File unpackToJarDirectory(final URL source, final boolean hash) {
+        return unpackToDirectory(source, true, null, hash);
     }
 
-    private static File unpackToDirectory(final URL source, final boolean useJarDirectory, final File directory) {
+    private static File unpackToDirectory(final URL source, final boolean useJarDirectory, final File directory, final boolean hash) {
         if (null == source) {
             throw new IllegalArgumentException("source must not be null");
         }
@@ -63,7 +63,8 @@ public class Unpacker {
                 }
 
                 final File jarFile = new File(decode(jarPath));
-                final String nameToUse = hash(source) + '.' + filename(url);
+                final String filename = filename(url);
+                final String nameToUse = hash ? hash(source) + '.' + filename : filename;
                 final File targetFile = new File(!useJarDirectory && null != directory ? directory : jarFile.getParentFile(), nameToUse);
                 if (!targetFile.exists()) {
                     copy(source, targetFile);

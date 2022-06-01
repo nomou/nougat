@@ -8,7 +8,6 @@ import com.sun.jna.ptr.IntByReference;
 import freework.io.IOUtils;
 import freework.proc.windows.Kernel32;
 import freework.proc.windows.Shell32;
-import freework.thread.Threads;
 import freework.util.Unpacker;
 
 import java.io.BufferedWriter;
@@ -16,16 +15,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
-import static freework.proc.unix.LibraryC.FD_CLOEXEC;
-import static freework.proc.unix.LibraryC.F_GETFD;
-import static freework.proc.unix.LibraryC.F_SETFD;
-import static freework.proc.unix.LibraryC.LIBC;
+import static freework.proc.unix.LibraryC.*;
 
 /**
  * 未完成.
@@ -71,8 +63,10 @@ public class Restarter {
                 public void accept(final List<String> commands) {
                     Collections.addAll(commands, String.valueOf(pid));
 
-                    Collections.addAll(commands, String.valueOf(beforeRestart.length));
-                    Collections.addAll(commands, beforeRestart);
+                    if (0 < beforeRestart.length) {
+                        Collections.addAll(commands, String.valueOf(beforeRestart.length));
+                        Collections.addAll(commands, beforeRestart);
+                    }
 
                     Collections.addAll(commands, String.valueOf(argc.getValue()));
                     Collections.addAll(commands, argv);
@@ -102,13 +96,17 @@ public class Restarter {
      */
     private static void restartOnMac(final String... beforeRestart) throws IOException {
         // FIXME
-        final String bundle = "/Applications/xxx.app";
+//        final String bundle = "/Applications/Developer Tools/IntelliJ IDEA.app";
+        final String bundle = "/Applications/QQ.app";
         final int p = bundle.indexOf(".app");
         if (0 > p) {
             throw new IOException("Application bundle not found: " + bundle);
         }
 
         final String bundlePath = bundle.substring(0, p + 4);
+        /*-
+         * mac restarter, getppid != 1, usleep 0.5 second, until ppid destroy
+         */
         doScheduleRestart(getRestarterBin(), new Consumer<List<String>>() {
             @Override
             public void accept(List<String> commands) {
@@ -124,8 +122,8 @@ public class Restarter {
         args.accept(commands);
         System.out.println(commands);
         Process exec = Runtime.getRuntime().exec(commands.toArray(new String[commands.size()]));
-        Threads.sleep(2000);
-        System.out.println(Handle.of(exec).isAlive());
+//        Threads.sleep(2000);
+//        System.out.println(Handle.of(exec).isAlive());
     }
 
     private static void restartOnUnix(final String... beforeRestart) throws IOException {
@@ -229,15 +227,43 @@ public class Restarter {
     }
 
     public static void main(String[] args) throws Exception {
-        // args = new String[]{"log.log", "2022-06-01 16:30:00"};
+//         args = new String[]{"log.log", "2022-06-01 21:06:00"};
+        /*
+        System.out.println("Wait restarter");
+        while (true) {
+            final Process proc = Runtime.getRuntime().exec(new String[]{"/bin/bash", "-c", "ps -ef | grep restarter | grep -v grep | awk '{print $2}'"});
+            final InputStream in = proc.getInputStream();
+            final String pid = IOUtils.toString(in, Charset.defaultCharset(), true);
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+            if (null != pid && !pid.isEmpty()) {
+                System.out.println(Handle.of(Integer.parseInt(pid.trim())).info());
+                System.out.println(pid);
+                break;
+            }
+            TimeUnit.SECONDS.sleep(1);
+        }
+        */
+
+        /*
+        final Process proc = Runtime.getRuntime().exec(new String[]{
+                "/Applications/Developer Tools/IntelliJ IDEA.app/Contents/bin/restarter",
+                "/Applications/Developer Tools/IntelliJ IDEA.app"
+        });
+        Thread.sleep(600);
+        System.out.println("Exit");
+        System.exit(88);
+        */
+
         System.out.println(System.getProperty("os.name"));
         Date parse = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(args[1]);
         if (parse.getTime() > System.currentTimeMillis()) {
             final FileWriter writer = new FileWriter(args[0], true);
             writer.write(System.currentTimeMillis() + ": OK\r\n");
             IOUtils.close(writer);
-            Threads.sleep(1000);
-            scheduleRestart();
+//            Threads.sleep(1000);
+            restartOnMac();
         }
         /*
         String[] beforeRestart = {"ab", "cd", "cd", "sdinf", "sdf"};
