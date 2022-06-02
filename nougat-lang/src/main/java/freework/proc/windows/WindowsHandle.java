@@ -12,6 +12,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 
+import static freework.proc.windows.Kernel32.KERNEL32;
 import static freework.proc.windows.Shell32.SHELL32;
 
 class WindowsHandle extends Handle {
@@ -77,7 +78,7 @@ class WindowsHandle extends Handle {
     /* ********* */
 
     private static int getJvmPid() {
-        return Kernel32.KERNEL32.GetCurrentProcessId();
+        return KERNEL32.GetCurrentProcessId();
     }
 
     /**
@@ -88,21 +89,35 @@ class WindowsHandle extends Handle {
     private static final int STILL_ACTIVE = 0x103;
 
     private static boolean isAlive(final int pid) {
-        final WinNT.HANDLE handle = Kernel32.KERNEL32.OpenProcess(PROCESS_QUERY_INFORMATION, false, pid);
-        return null != handle && STILL_ACTIVE == getExitCode(handle);
+        final WinNT.HANDLE handle = KERNEL32.OpenProcess(PROCESS_QUERY_INFORMATION, false, pid);
+        if (null == handle) {
+            return false;
+        }
+        try {
+            return STILL_ACTIVE == getExitCode(handle);
+        } finally {
+            KERNEL32.CloseHandle(handle);
+        }
     }
 
     private static int getExitCode(final WinNT.HANDLE handle) {
         final IntByReference exitCodeRef = new IntByReference(0);
-        if (!Kernel32.KERNEL32.GetExitCodeProcess(handle, exitCodeRef)) {
+        if (!KERNEL32.GetExitCodeProcess(handle, exitCodeRef)) {
             throw new IllegalStateException("Failed to check status of the process with handle = " + handle.getPointer());
         }
         return exitCodeRef.getValue();
     }
 
     private static boolean terminate(final int pid, final int exitCode) {
-        final WinNT.HANDLE handle = Kernel32.KERNEL32.OpenProcess(PROCESS_TERMINATE, false, pid);
-        return null != handle && Kernel32.KERNEL32.TerminateProcess(handle, exitCode);
+        final WinNT.HANDLE handle = KERNEL32.OpenProcess(PROCESS_TERMINATE, false, pid);
+        if (null == handle) {
+            return false;
+        }
+        try {
+            return KERNEL32.TerminateProcess(handle, exitCode);
+        } finally {
+            KERNEL32.CloseHandle(handle);
+        }
     }
 
     private static Info info(final int pid) {
@@ -115,7 +130,7 @@ class WindowsHandle extends Handle {
                 final String[] procArgs = argvPtr.getWideStringArray(0, argc.getValue());
                 return new InfoImpl(cmdline, procArgs[0], Arrays.copyOfRange(procArgs, 1, procArgs.length));
             } finally {
-                Kernel32.KERNEL32.LocalFree(argvPtr);
+                KERNEL32.LocalFree(argvPtr);
             }
         } catch (final WinpException ex) {
             // XXX return null ?
@@ -144,7 +159,7 @@ class WindowsHandle extends Handle {
             /* 根据句柄获取 PID. */
             final long handle = (Long) f.get(proc);
             final WinNT.HANDLE winHandle = new WinNT.HANDLE(Pointer.createConstant(handle));
-            return Kernel32.KERNEL32.GetProcessId(winHandle);
+            return KERNEL32.GetProcessId(winHandle);
         } catch (final ReflectiveOperationException ex) {
             if (!JDK_WINDOWS_PROCESS_CLASSES.contains(clazz.getName())) {
                 throw new IllegalStateException("process maybe not a windows process", ex);

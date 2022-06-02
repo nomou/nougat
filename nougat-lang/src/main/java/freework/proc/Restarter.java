@@ -4,26 +4,29 @@ import com.sun.jna.Native;
 import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.StringArray;
-import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.ptr.IntByReference;
 import freework.io.IOUtils;
 import freework.thread.Threads;
+import freework.util.LazyValue;
 import freework.util.Unpacker;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
 import static freework.proc.unix.LibraryC.*;
 import static freework.proc.windows.Kernel32.KERNEL32;
 import static freework.proc.windows.Shell32.SHELL32;
 
 /**
- * 未完成.
- * https://github.com/JetBrains/intellij-community/tree/master/native
+ *
  */
 public class Restarter {
     /**
@@ -34,7 +37,6 @@ public class Restarter {
 
     public static void scheduleRestart(final String... beforeRestart) throws IOException {
         try {
-            Handle.current();
             if (Platform.isWindows()) {
                 restartOnWindows(beforeRestart);
             } else if (Platform.isMac()) {
@@ -49,33 +51,39 @@ public class Restarter {
         }
     }
 
-    /**
-     * 执行Windows平台的重启操作.
-     *
-     * @param beforeRestart 重启前要执行的命令行
-     * @throws IOException 如果重启指令出错抛出该异常
-     */
     private static void restartOnWindows(final String... beforeRestart) throws IOException {
-        /* 获取当前进程启动命令行. */
         final int pid = KERNEL32.GetCurrentProcessId();
         final IntByReference argc = new IntByReference();
         final Pointer argvPointer = SHELL32.CommandLineToArgvW(KERNEL32.GetCommandLineW(), argc);
         try {
             final String[] argv = argvPointer.getWideStringArray(0, argc.getValue());
-            doScheduleRestart(getRestarterBin(), new Consumer<List<String>>() {
-                @Override
-                public void accept(final List<String> commands) {
-                    Collections.addAll(commands, String.valueOf(pid));
+            /*-
+             * See https://blogs.msdn.microsoft.com/oldnewthing/20060515-07/?p=31203
+             * argv[0] as the program name is only a convention, i.e. there is no guarantee the name is the full path to the executable
+             */
+            /*
+            // using 32,767 as buffer size to avoid limiting ourselves to MAX_PATH (260)
+            final char[] buffer = new char[32767];
+            final int result = KERNEL32.GetModuleFileNameW(null, buffer, new WinDef.DWORD(buffer.length)).intValue();
+            if (result == 0) {
+            throw new IOException("GetModuleFileName failed")
+            }
+            argv[0] = Native.toString(buffer);
+            */
+            final List<String> args = new ArrayList<>();
+            Collections.addAll(args, String.valueOf(pid));
+            if (0 < beforeRestart.length) {
+                Collections.addAll(args, String.valueOf(beforeRestart.length));
+                Collections.addAll(args, beforeRestart);
+            }
+            Collections.addAll(args, String.valueOf(argc.getValue()));
+            Collections.addAll(args, argv);
 
-                    if (0 < beforeRestart.length) {
-                        Collections.addAll(commands, String.valueOf(beforeRestart.length));
-                        Collections.addAll(commands, beforeRestart);
-                    }
-
-                    Collections.addAll(commands, String.valueOf(argc.getValue()));
-                    Collections.addAll(commands, argv);
-                }
-            });
+            final File restarter = RESTARTER.get();
+            if (null == restarter) {
+                throw new IOException("Can't find restarter.exe, please check jar integrity");
+            }
+            runRestarter(restarter, args);
         } finally {
             KERNEL32.LocalFree(argvPointer);
         }
@@ -103,36 +111,24 @@ public class Restarter {
         }
     }
 
-    /**
-     * 执行MAC平台的 Bundle 重启操作.
-     *
-     * @param beforeRestart 重启前要执行的命令行
-     * @throws IOException 如果重启指令出错抛出该异常
-     */
     private static void restartBundleOnMac(final String bundle, final String... beforeRestart) throws IOException {
         final int p = bundle.indexOf(".app");
         if (0 > p) {
             throw new IOException("Application bundle not found: " + bundle);
         }
 
-        final String bundlePath = bundle.substring(0, p + 4);
         /*-
          * mac restarter, getppid != 1, usleep 0.5 second, until ppid destroy
          */
-        doScheduleRestart(getRestarterBin(), new Consumer<List<String>>() {
-            @Override
-            public void accept(List<String> commands) {
-                Collections.addAll(commands, bundlePath);
-                Collections.addAll(commands, beforeRestart);
-            }
-        });
-    }
+        final List<String> args = new ArrayList<>();
+        Collections.addAll(args, bundle.substring(0, p + 4));
+        Collections.addAll(args, beforeRestart);
 
-    private static void doScheduleRestart(final File restarterBin, final Consumer<List<String>> args) throws IOException {
-        final List<String> commands = new ArrayList<String>();
-        commands.add(restarterBin.getAbsolutePath());
-        args.accept(commands);
-        Runtime.getRuntime().exec(commands.toArray(new String[commands.size()]));
+        final File restarter = RESTARTER.get();
+        if (null == restarter) {
+            throw new IOException("Can't find restarter, please check jar integrity");
+        }
+        runRestarter(restarter, args);
     }
 
     private static void restartOnUnix(final String... beforeRestart) throws IOException {
@@ -187,42 +183,32 @@ public class Restarter {
         if (!restarter.setExecutable(true)) {
             throw new IOException("Cannot make file executable: " + restarter);
         }
-        System.out.println(restarter);
 
         final String[] cmdlineToUse = new String[cmdline.length + 1];
         cmdlineToUse[0] = restarter.getAbsolutePath();
         System.arraycopy(cmdline, 0, cmdlineToUse, 1, cmdline.length);
 
-        System.out.println(String.format("LIBC.execv(%s, %s)", cmdlineToUse[0], Arrays.toString(cmdlineToUse)));
         LIBC.execv(cmdlineToUse[0], new StringArray(cmdlineToUse));
 
         throw new IOException("Failed to exec '" + exec + "' " + LIBC.strerror(Native.getLastError()));
     }
 
-    private interface Consumer<T> {
-        void accept(final T t);
-    }
-
-    private static final File RESTARTER;
-
-    static {
-        /*-
-         * restarter pid [argc arg1 ...] [argc arg1, ...]] ...
-         * eg:
-         * restarter {pid} 1 c:\windows\notepad.exe 2 c:\windows\notepad.exe foo.txt
-         * wait pid exit -> notepad.exe
-         * wait notepad.exe exit -> notepad.exe foo.txt
-         * ...
-         */
-        final boolean is64Bit = Platform.is64Bit();
-        if (Platform.isWindows()) {
-            RESTARTER = makeExecutable(Unpacker.unpackAsTempFile(Restarter.class.getResource("/bin/windows/x86/restarter.exe")));
-        } else if (Platform.isMac() && is64Bit) {
-            RESTARTER = makeExecutable(Unpacker.unpackAsTempFile(Restarter.class.getResource("/bin/macosx/x86_64/restarter")));
-        } else {
-            RESTARTER = null;
+    private static final LazyValue<File> RESTARTER = new LazyValue<File>() {
+        @Override
+        protected File compute() {
+            /*-
+             * https://github.com/JetBrains/intellij-community/tree/master/native
+             */
+            final boolean is64Bit = Platform.is64Bit();
+            URL bin = null;
+            if (Platform.isWindows()) {
+                bin = Restarter.class.getResource("/bin/windows/x86/restarter.exe");
+            } else if (Platform.isMac() && is64Bit) {
+                bin = Restarter.class.getResource("/bin/macosx/x86_64/restarter");
+            }
+            return null != bin ? makeExecutable(Unpacker.unpackToDirectory(bin, new File("bin"), false)) : null;
         }
-    }
+    };
 
     private static File makeExecutable(final File f) {
         if (!f.setExecutable(true)) {
@@ -231,19 +217,13 @@ public class Restarter {
         return f;
     }
 
-    private static File getRestarterBin() {
-        return RESTARTER;
+    private static void runRestarter(final File restarterFile, final List<String> restarterArgs) throws IOException {
+        restarterArgs.add(0, restarterFile.getAbsolutePath());
+        new ProcessBuilder(restarterArgs).start();
     }
 
     public static void main(String[] args) throws Exception {
-        char[] buffer = new char[32767];  // using 32,767 as buffer size to avoid limiting ourselves to MAX_PATH (260)
-        int result = KERNEL32.GetModuleFileNameW(null, buffer, new WinDef.DWORD(buffer.length)).intValue();
-        System.out.println(result);
-        if (result != 0)
-            System.out.println(Native.toString(buffer));
-
-        System.exit(0);
-        args = new String[]{"log.log", "2022-06-02 10:28:00"};
+        // args = new String[]{"log.log", "2022-06-02 15:33:00"};
 
         System.out.println(System.getProperty("os.name"));
         Date parse = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(args[1]);
@@ -252,7 +232,7 @@ public class Restarter {
             writer.write(System.currentTimeMillis() + ": OK\r\n");
             IOUtils.close(writer);
             Threads.sleep(1000);
-            restartOnMac();
+            scheduleRestart();
         }
         /*
         String[] beforeRestart = {"ab", "cd", "cd", "sdinf", "sdf"};

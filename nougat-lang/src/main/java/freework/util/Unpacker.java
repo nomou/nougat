@@ -4,11 +4,7 @@ import freework.codec.Hex;
 import freework.crypto.digest.Hash;
 import freework.io.IOUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -22,21 +18,16 @@ public class Unpacker {
         return unpackToDirectory(source, null, false);
     }
 
-    public static File unpackToDirectory(final URL source, final File directory, final boolean hash) {
-        return unpackToDirectory(source, false, directory, hash);
-    }
-
     public static File unpackToJarDirectory(final URL source, final boolean hash) {
-        return unpackToDirectory(source, true, null, hash);
+        return unpackToDirectory(source, new File("."), hash);
     }
 
-    private static File unpackToDirectory(final URL source, final boolean useJarDirectory, final File directory, final boolean hash) {
+    public static File unpackToDirectory(final URL source, final File directory, final boolean hash) {
         if (null == source) {
             throw new IllegalArgumentException("source must not be null");
         }
         final String url = source.toExternalForm();
-        final boolean hasDirectory = useJarDirectory || null != directory;
-        if (hasDirectory && (url.startsWith("jar:") || url.startsWith("wsjar:"))) {
+        if (null != directory && (url.startsWith("jar:") || url.startsWith("wsjar:"))) {
             /*-
              * jar 文件且是解压到固定目录.
              * jar:file:/path.jar!path_in_jar
@@ -63,9 +54,11 @@ public class Unpacker {
                 }
 
                 final File jarFile = new File(decode(jarPath));
+                final File directoryToUse = directory.isAbsolute() ? directory : new File(jarFile.getParentFile(), directory.getPath());
+
                 final String filename = filename(url);
                 final String nameToUse = hash ? hash(source) + '.' + filename : filename;
-                final File targetFile = new File(!useJarDirectory && null != directory ? directory : jarFile.getParentFile(), nameToUse);
+                final File targetFile = new File(directoryToUse, nameToUse);
                 if (!targetFile.exists()) {
                     copy(source, targetFile);
                 }
