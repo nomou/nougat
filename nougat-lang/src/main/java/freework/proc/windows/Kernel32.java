@@ -2,6 +2,7 @@ package freework.proc.windows;
 
 import com.sun.jna.Native;
 import com.sun.jna.WString;
+import com.sun.jna.platform.win32.WinDef;
 
 /**
  * Windows kernel32.
@@ -18,6 +19,8 @@ public interface Kernel32 extends com.sun.jna.platform.win32.Kernel32 {
      * @see <a href="https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getcommandlinew">GetCommandLineW</a>
      */
     WString GetCommandLineW();
+
+    WinDef.DWORD GetModuleFileNameW(WinDef.HMODULE hModule, char[] lpFilename, WinDef.DWORD nSize);
 
     /**
      * 获取当前进程的进程ID.

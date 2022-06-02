@@ -4,10 +4,9 @@ import com.sun.jna.Native;
 import com.sun.jna.Platform;
 import com.sun.jna.Pointer;
 import com.sun.jna.StringArray;
+import com.sun.jna.platform.win32.WinDef;
 import com.sun.jna.ptr.IntByReference;
 import freework.io.IOUtils;
-import freework.proc.windows.Kernel32;
-import freework.proc.windows.Shell32;
 import freework.thread.Threads;
 import freework.util.Unpacker;
 
@@ -19,6 +18,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 import static freework.proc.unix.LibraryC.*;
+import static freework.proc.windows.Kernel32.KERNEL32;
+import static freework.proc.windows.Shell32.SHELL32;
 
 /**
  * 未完成.
@@ -56,9 +57,9 @@ public class Restarter {
      */
     private static void restartOnWindows(final String... beforeRestart) throws IOException {
         /* 获取当前进程启动命令行. */
-        final int pid = Kernel32.KERNEL32.GetCurrentProcessId();
+        final int pid = KERNEL32.GetCurrentProcessId();
         final IntByReference argc = new IntByReference();
-        final Pointer argvPointer = Shell32.SHELL32.CommandLineToArgvW(Kernel32.KERNEL32.GetCommandLineW(), argc);
+        final Pointer argvPointer = SHELL32.CommandLineToArgvW(KERNEL32.GetCommandLineW(), argc);
         try {
             final String[] argv = argvPointer.getWideStringArray(0, argc.getValue());
             doScheduleRestart(getRestarterBin(), new Consumer<List<String>>() {
@@ -76,7 +77,7 @@ public class Restarter {
                 }
             });
         } finally {
-            Kernel32.KERNEL32.LocalFree(argvPointer);
+            KERNEL32.LocalFree(argvPointer);
         }
 
         /*-
@@ -235,6 +236,13 @@ public class Restarter {
     }
 
     public static void main(String[] args) throws Exception {
+        char[] buffer = new char[32767];  // using 32,767 as buffer size to avoid limiting ourselves to MAX_PATH (260)
+        int result = KERNEL32.GetModuleFileNameW(null, buffer, new WinDef.DWORD(buffer.length)).intValue();
+        System.out.println(result);
+        if (result != 0)
+            System.out.println(Native.toString(buffer));
+
+        System.exit(0);
         args = new String[]{"log.log", "2022-06-02 10:28:00"};
 
         System.out.println(System.getProperty("os.name"));
