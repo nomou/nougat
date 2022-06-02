@@ -8,6 +8,7 @@ import com.sun.jna.ptr.IntByReference;
 import freework.io.IOUtils;
 import freework.proc.windows.Kernel32;
 import freework.proc.windows.Shell32;
+import freework.thread.Threads;
 import freework.util.Unpacker;
 
 import java.io.BufferedWriter;
@@ -21,6 +22,7 @@ import static freework.proc.unix.LibraryC.*;
 
 /**
  * 未完成.
+ * https://github.com/JetBrains/intellij-community/tree/master/native
  */
 public class Restarter {
     /**
@@ -31,10 +33,11 @@ public class Restarter {
 
     public static void scheduleRestart(final String... beforeRestart) throws IOException {
         try {
+            Handle.current();
             if (Platform.isWindows()) {
                 restartOnWindows(beforeRestart);
-            /* } else if (Platform.isMac()) {
-                restartOnMac(beforeRestart); */
+            } else if (Platform.isMac()) {
+                restartOnMac(beforeRestart);
             } else if (Platform.isLinux()) {
                 restartOnUnix(beforeRestart);
             } else {
@@ -88,17 +91,24 @@ public class Restarter {
         }
     }
 
+    private static void restartOnMac(final String... beforeRestart) throws IOException {
+        final Handle handle = Handle.current();
+        final String command = handle.info().command();
+        final int p = command.indexOf(".app");
+        if (0 > p) {
+            restartOnUnix(beforeRestart);
+        } else {
+            restartBundleOnMac(command.substring(0, p + 4));
+        }
+    }
+
     /**
-     * 执行MAC平台的Bundle重启操作.
+     * 执行MAC平台的 Bundle 重启操作.
      *
      * @param beforeRestart 重启前要执行的命令行
      * @throws IOException 如果重启指令出错抛出该异常
      */
-    private static void restartOnMac(final String... beforeRestart) throws IOException {
-        System.out.println(Handle.current().info());
-        // FIXME
-//        final String bundle = "/Applications/Developer Tools/IntelliJ IDEA.app";
-        final String bundle = "/Applications/QQ.app";
+    private static void restartBundleOnMac(final String bundle, final String... beforeRestart) throws IOException {
         final int p = bundle.indexOf(".app");
         if (0 > p) {
             throw new IOException("Application bundle not found: " + bundle);
@@ -121,10 +131,7 @@ public class Restarter {
         final List<String> commands = new ArrayList<String>();
         commands.add(restarterBin.getAbsolutePath());
         args.accept(commands);
-        System.out.println(commands);
-        Process exec = Runtime.getRuntime().exec(commands.toArray(new String[commands.size()]));
-//        Threads.sleep(2000);
-//        System.out.println(Handle.of(exec).isAlive());
+        Runtime.getRuntime().exec(commands.toArray(new String[commands.size()]));
     }
 
     private static void restartOnUnix(final String... beforeRestart) throws IOException {
@@ -228,34 +235,7 @@ public class Restarter {
     }
 
     public static void main(String[] args) throws Exception {
-//         args = new String[]{"log.log", "2022-06-01 21:06:00"};
-        /*
-        System.out.println("Wait restarter");
-        while (true) {
-            final Process proc = Runtime.getRuntime().exec(new String[]{"/bin/bash", "-c", "ps -ef | grep restarter | grep -v grep | awk '{print $2}'"});
-            final InputStream in = proc.getInputStream();
-            final String pid = IOUtils.toString(in, Charset.defaultCharset(), true);
-            if (Thread.interrupted()) {
-                throw new InterruptedException();
-            }
-            if (null != pid && !pid.isEmpty()) {
-                System.out.println(Handle.of(Integer.parseInt(pid.trim())).info());
-                System.out.println(pid);
-                break;
-            }
-            TimeUnit.SECONDS.sleep(1);
-        }
-        */
-
-        /*
-        final Process proc = Runtime.getRuntime().exec(new String[]{
-                "/Applications/Developer Tools/IntelliJ IDEA.app/Contents/bin/restarter",
-                "/Applications/Developer Tools/IntelliJ IDEA.app"
-        });
-        Thread.sleep(600);
-        System.out.println("Exit");
-        System.exit(88);
-        */
+        args = new String[]{"log.log", "2022-06-02 10:28:00"};
 
         System.out.println(System.getProperty("os.name"));
         Date parse = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(args[1]);
@@ -263,7 +243,7 @@ public class Restarter {
             final FileWriter writer = new FileWriter(args[0], true);
             writer.write(System.currentTimeMillis() + ": OK\r\n");
             IOUtils.close(writer);
-//            Threads.sleep(1000);
+            Threads.sleep(1000);
             restartOnMac();
         }
         /*
@@ -275,15 +255,6 @@ public class Restarter {
             if (i >= beforeRestart.length - 2) System.out.print('"');
         }
         System.out.print('\n');
-        */
-        /*
-        Excels.read(IOUtils.buffer(Resources.getResourceAsStream("ds_product-97-2003.xls")), new RecordHandlerImpl() {
-            @Override
-            public void onRecord(Record record) throws ExcelReadException {
-                ExcelHelper.printRecord(record);
-//                System.out.println();
-            }
-        });
         */
     }
 }
