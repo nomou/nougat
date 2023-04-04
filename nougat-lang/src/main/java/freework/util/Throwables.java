@@ -50,6 +50,18 @@ public abstract class Throwables {
         return rethrow(IllegalStateException.class, message, cause);
     }
 
+    public static <R> R sneakyThrow(final Throwable cause) {
+        if (null == cause) {
+            throw new NullPointerException("cause");
+        }
+        return Throwables.<R, RuntimeException>sneakyThrow0(cause);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <R, E extends Throwable> R sneakyThrow0(final Throwable cause) throws E {
+        throw (E) cause;
+    }
+
     /**
      * Re-throws the specified throwable as wrap type throwable.
      *
